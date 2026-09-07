@@ -1,7 +1,10 @@
-# Gráfica Livre
+# Gráfica Livre (fork interno)
 
 Sistema de gestão **gratuito e open source** para gráficas rápidas e comunicação visual:
 orçamentos, faturas, produção, financeiro e relatórios — tudo em português, num app só.
+
+> Fork operacional da conta **rockbca-dotcom**, a partir de [0brunox/grafica-livre](https://github.com/0brunox/grafica-livre) (MIT).
+> Guia da equipe: **[COMO-USAR.md](COMO-USAR.md)**
 
 ![Dashboard](src/assets/screens/dashboard.webp)
 
@@ -21,11 +24,14 @@ orçamentos, faturas, produção, financeiro e relatórios — tudo em portuguê
 Requer [Node.js](https://nodejs.org) 20+.
 
 ```bash
-git clone https://github.com/0brunox/grafica-livre.git
+git clone https://github.com/rockbca-dotcom/grafica-livre.git
 cd grafica-livre
 npm install
 npm run dev
 ```
+
+No Windows você pode dar dois cliques em `start.bat`.
+No Linux/macOS: `chmod +x start.sh && ./start.sh`.
 
 Abra http://localhost:5173 — o app roda em **modo local**, guardando os dados no
 localStorage do navegador. Ideal para testar ou para uso individual num único computador.
@@ -36,35 +42,20 @@ Se você tem o [Claude Code](https://claude.com/claude-code) ou o
 [Codex](https://openai.com/codex) instalado, não precisa digitar nenhum
 comando. Abra o assistente numa pasta vazia e cole isto:
 
-> Instale e rode o sistema do repositório https://github.com/0brunox/grafica-livre.
+> Instale e rode o sistema do repositório https://github.com/rockbca-dotcom/grafica-livre.
 > Clone o projeto, instale as dependências e suba o servidor de desenvolvimento.
 > Se eu ainda não tiver o Node.js 20 ou superior, instale antes. Quando estiver
 > no ar, me diga o endereço para abrir no navegador.
-
-Ele cuida do clone, do `npm install` e de subir o servidor — inclusive de instalar
-o Node.js, se faltar. Para parar e voltar a usar depois, peça: *"suba de novo o
-servidor do Gráfica Livre"*.
-
-Para configurar o **modo nuvem** (seção seguinte), o assistente também resolve a
-parte técnica — executar o `schema.sql` e preencher o `.env`. A criação da conta no
-Supabase e a cópia das chaves são suas: ele vai pedir esses dados a você.
 
 ## Modo nuvem (Supabase — gratuito)
 
 Para acessar de vários dispositivos, com login e dados no banco:
 
 1. Crie um projeto gratuito no [Supabase](https://supabase.com).
-2. No **SQL Editor** do projeto, cole e execute o conteúdo de [`supabase/schema.sql`](supabase/schema.sql)
-   (cria tabelas, RLS e a função de numeração atômica — seguro rodar mais de uma vez).
+2. No **SQL Editor** do projeto, cole e execute o conteúdo de [`supabase/schema.sql`](supabase/schema.sql).
 3. Em **Authentication → Users**, crie seu usuário (e-mail/senha).
 4. **Desligue o cadastro aberto** em **Authentication → Sign In / Providers → Email**,
    na opção *"Allow new users to sign up"*.
-
-   > ⚠️ O Supabase vem com o cadastro **liberado por padrão**. Sem esse passo, qualquer
-   > pessoa que souber o endereço do seu app cria uma conta no seu projeto. Os dados de
-   > cada usuário continuam isolados por RLS — ninguém enxerga os seus —, mas a cota do
-   > projeto é sua. Crie os usuários da sua equipe manualmente em *Authentication → Users*.
-
 5. Copie `.env.example` para `.env` e preencha com os valores de **Settings → API**:
 
    ```
@@ -99,16 +90,7 @@ funciona em qualquer host estático:
 
 React 19 · TypeScript · Vite · Tailwind CSS 4 · Supabase (opcional) · pdfmake · Recharts
 
-## Contribuindo
-
-Issues e pull requests são bem-vindos! Para desenvolver:
-
-```bash
-npm run dev      # servidor de desenvolvimento
-npm run lint     # oxlint
-npm run build    # typecheck + build de produção
-```
-
 ## Licença
 
-[MIT](LICENSE) © 2026 Bruno Santos
+[MIT](LICENSE) © 2026 Bruno Santos (projeto original).
+Este fork mantém a mesma licença.
