@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import dashboardShot from '../assets/screens/dashboard.webp'
 import orcamentosShot from '../assets/screens/orcamentos.webp'
 import faturasShot from '../assets/screens/faturas.webp'
+import heroShot from '../assets/hero-graficaup.png'
 
 const GITHUB_URL = 'https://github.com/0brunox/grafica-livre'
 
@@ -230,12 +230,21 @@ export default function Landing() {
                 <p className="mt-5 text-xs font-medium tracking-[0.04em] text-white/45">Sem cartão • Setup em poucos minutos • Código aberto</p>
               </div>
               <div className="relative lg:translate-x-4">
-                <BrowserFrame
-                  src={dashboardShot}
-                  alt="Dashboard do GraficaUp Studio com indicadores de recebimentos, despesas e orçamentos"
-                  eager
-                  badge="Decida com dados, não com achismo"
-                />
+                <div className="relative overflow-hidden rounded-[32px] border border-white/15 bg-[#1e2327] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+                  <img
+                    src={heroShot}
+                    alt="Ilustração do GraficaUp Studio com materiais impressos, fluxo de produção e painel de resultados"
+                    width={1536}
+                    height={1024}
+                    className="block aspect-[3/2] w-full object-cover"
+                    loading="eager"
+                    decoding="async"
+                  />
+                  <div className="absolute bottom-4 right-4 rounded-2xl border border-white/15 bg-[#16191c]/90 px-4 py-3 text-left backdrop-blur">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1ebfbf]">Visão do negócio</p>
+                    <p className="mt-1 text-sm font-semibold text-white">Decida com dados, não com achismo</p>
+                  </div>
+                </div>
                 <div className="absolute -bottom-6 -left-4 hidden rounded-2xl border border-[#dadadd]/50 bg-white px-4 py-3 shadow-xl sm:block">
                   <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#5b6065]">Mais clareza</p>
                   <p className="mt-1 text-xl font-bold text-[#16191c]">menos retrabalho</p>
