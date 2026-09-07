@@ -4,8 +4,6 @@ import orcamentosShot from '../assets/screens/orcamentos.webp'
 import faturasShot from '../assets/screens/faturas.webp'
 import heroShot from '../assets/hero-graficaup.png'
 
-const GITHUB_URL = 'https://github.com/0brunox/grafica-livre'
-
 const iconProps = {
   width: 20,
   height: 20,
@@ -183,9 +181,6 @@ export default function Landing() {
             <button type="button" onClick={() => scrollToSection('como-funciona')} className="transition hover:text-[#16191c]">
               Como funciona
             </button>
-            <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="transition hover:text-[#16191c]">
-              Código aberto
-            </a>
           </nav>
           <Link to="/login" className="rounded-xl bg-[#16191c] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#393e41]">
             Acessar sistema
@@ -227,7 +222,7 @@ export default function Landing() {
                     Conhecer recursos <span aria-hidden="true">→</span>
                   </button>
                 </div>
-                <p className="mt-5 text-xs font-medium tracking-[0.04em] text-white/45">Sem cartão • Setup em poucos minutos • Código aberto</p>
+                <p className="mt-5 text-xs font-medium tracking-[0.04em] text-white/45">Sem cartão • Setup em poucos minutos • Acesso online</p>
               </div>
               <div className="relative lg:translate-x-4">
                 <div className="relative overflow-hidden rounded-[32px] border border-white/15 bg-[#1e2327] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
@@ -346,7 +341,6 @@ export default function Landing() {
             <p className="mt-2 text-sm text-white/55">Gestão comercial para gráficas que querem crescer.</p>
           </div>
           <div className="flex items-center gap-5 text-sm text-white/65">
-            <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="transition hover:text-white">Código aberto</a>
             <Link to="/login" className="transition hover:text-white">Entrar</Link>
             <span>© {new Date().getFullYear()}</span>
           </div>
