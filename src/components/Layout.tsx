@@ -12,7 +12,7 @@ const NAV = [
   { to: '/contas-receber', label: 'Contas a Receber', icon: '💰' },
   { to: '/contas-pagar', label: 'Contas a Pagar', icon: '💸' },
   { to: '/clientes', label: 'Clientes', icon: '👥' },
-  { to: '/itens', label: 'Itens', icon: '📦' },
+  { to: '/itens', label: 'Produtos', icon: '📦' },
   { to: '/relatorios', label: 'Relatórios', icon: '📈' },
   { to: '/perfil', label: 'Perfil da Empresa', icon: '🏢' },
   { to: '/configuracoes', label: 'Configurações', icon: '⚙️' },

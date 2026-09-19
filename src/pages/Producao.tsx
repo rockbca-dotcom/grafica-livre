@@ -155,7 +155,7 @@ export default function Producao() {
                       className={`cursor-pointer rounded-lg bg-white p-3 shadow-sm ring-1 ring-slate-200 hover:ring-blue-300 ${
                         dragId === card.id ? 'opacity-50' : ''
                       }`}
-                      title="Clique para ver os itens"
+                      title="Clique para ver os produtos"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-semibold text-slate-800">{card.titulo}</p>
@@ -347,7 +347,7 @@ export default function Producao() {
 
               {fatura ? (
                 <div>
-                  <h4 className="mb-1 text-xs font-semibold uppercase text-slate-500">Itens</h4>
+                  <h4 className="mb-1 text-xs font-semibold uppercase text-slate-500">Produtos</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>

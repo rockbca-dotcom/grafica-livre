@@ -153,7 +153,7 @@ export default function Faturas() {
     }
     const itens = draft.itens.filter((i) => i.descricao.trim())
     if (itens.length === 0) {
-      showToast('Adicione pelo menos um item.', 'error')
+      showToast('Adicione pelo menos um produto.', 'error')
       return
     }
     const t = calcularTotais(itens, draft.frete, draft.desconto)
@@ -369,7 +369,7 @@ export default function Faturas() {
             </div>
 
             <div className="mt-5">
-              <h3 className="mb-2 text-sm font-semibold text-slate-700">Itens</h3>
+              <h3 className="mb-2 text-sm font-semibold text-slate-700">Produtos</h3>
               <ItensEditor
                 itens={draft.itens}
                 onChange={(itens) => setDraft({ ...draft, itens })}

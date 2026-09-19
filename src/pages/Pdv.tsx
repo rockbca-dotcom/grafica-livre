@@ -64,7 +64,7 @@ export default function Pdv() {
   const adicionarItem = (item: Item) => {
     const valorUnit = precoPadrao(item)
     if (!valorUnit) {
-      showToast('Defina um preço no catálogo antes de adicionar este item.', 'error')
+      showToast('Defina um preço no catálogo antes de adicionar este produto.', 'error')
       return
     }
     setCarrinho((atual) => {
@@ -93,7 +93,7 @@ export default function Pdv() {
   const adicionarAvulso = () => {
     const descricao = descricaoAvulsa.trim()
     if (!descricao || valorAvulso <= 0) {
-      showToast('Informe a descrição e um valor válido para o item avulso.', 'error')
+      showToast('Informe a descrição e um valor válido para o produto avulso.', 'error')
       return
     }
     setCarrinho((atual) => [
@@ -125,7 +125,7 @@ export default function Pdv() {
   const finalizarVenda = async (event: FormEvent) => {
     event.preventDefault()
     if (carrinho.length === 0) {
-      showToast('Adicione pelo menos um item à venda.', 'error')
+      showToast('Adicione pelo menos um produto à venda.', 'error')
       return
     }
     if (total <= 0) {
@@ -166,7 +166,7 @@ export default function Pdv() {
         <KpiCard label="Vendas hoje" value={String(vendasHoje.length)} to="/pdv" />
         <KpiCard label="Recebido hoje" value={formatCents(totalHoje)} tone="good" to="/relatorios" />
         <KpiCard
-          label="Itens no carrinho"
+          label="Produtos no carrinho"
           value={String(carrinho.reduce((sum, linha) => sum + linha.qtd, 0))}
           hint={carrinho.length ? formatCents(total) : 'Pronto para começar'}
         />
@@ -180,7 +180,7 @@ export default function Pdv() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">
                   Balcão aberto
                 </p>
-                <h2 className="mt-1 text-xl font-bold">Escolha os itens da venda</h2>
+                <h2 className="mt-1 text-xl font-bold">Escolha os produtos da venda</h2>
               </div>
               <span className="rounded-full border border-white/20 px-3 py-1 text-xs text-slate-300">
                 {db.itens.length} no catálogo
@@ -199,8 +199,8 @@ export default function Pdv() {
             {itensFiltrados.length === 0 ? (
               <EmptyState
                 icon="📦"
-                title="Nenhum item encontrado"
-                hint="Cadastre itens no catálogo ou lance um item avulso abaixo."
+                title="Nenhum produto encontrado"
+                hint="Cadastre produtos no catálogo ou lance um produto avulso abaixo."
               />
             ) : (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -234,7 +234,7 @@ export default function Pdv() {
 
             <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
               <div className="mb-3">
-                <h3 className="text-sm font-semibold text-slate-700">Item avulso</h3>
+                <h3 className="text-sm font-semibold text-slate-700">Produto avulso</h3>
                 <p className="text-xs text-slate-400">Para uma venda que ainda não está no catálogo.</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-[1fr_150px_auto] sm:items-end">
@@ -272,7 +272,7 @@ export default function Pdv() {
             <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center">
               <div className="mb-2 text-4xl">🛒</div>
               <p className="text-sm font-medium text-slate-600">Seu carrinho está vazio</p>
-              <p className="mt-1 text-xs text-slate-400">Clique em um item para iniciar a venda.</p>
+              <p className="mt-1 text-xs text-slate-400">Clique em um produto para iniciar a venda.</p>
             </div>
           ) : (
             <div className="space-y-3">

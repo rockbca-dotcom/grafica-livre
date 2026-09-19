@@ -95,12 +95,12 @@ export default function Itens() {
   return (
     <div>
       <PageHeader
-        title="Itens"
+        title="Produtos"
         subtitle="Catálogo de produtos e serviços"
         actions={
           <>
-            <SearchBox value={search} onChange={setSearch} placeholder="Buscar item..." />
-            <Button onClick={() => setEditing(novoItem())}>+ Novo Item</Button>
+            <SearchBox value={search} onChange={setSearch} placeholder="Buscar produto..." />
+            <Button onClick={() => setEditing(novoItem())}>+ Novo Produto</Button>
           </>
         }
       />
@@ -113,7 +113,7 @@ export default function Itens() {
           empty={
             <EmptyState
               icon="📦"
-              title="Nenhum item cadastrado"
+              title="Nenhum produto cadastrado"
               hint="Cadastre lonas, adesivos, placas e serviços com preço por m² ou unitário."
             />
           }
@@ -172,7 +172,7 @@ export default function Itens() {
 
       <Modal
         open={editing !== null}
-        title={editing && db.itens.some((i) => i.id === editing.id) ? 'Editar Item' : 'Novo Item'}
+        title={editing && db.itens.some((i) => i.id === editing.id) ? 'Editar Produto' : 'Novo Produto'}
         onClose={() => setEditing(null)}
         footer={
           <div className="flex justify-end gap-2">
@@ -194,7 +194,7 @@ export default function Itens() {
 
       <ConfirmDialog
         open={deleting !== null}
-        title="Excluir item"
+        title="Excluir produto"
         message={`Excluir "${deleting?.nome}" do catálogo?`}
         confirmLabel="Excluir"
         danger

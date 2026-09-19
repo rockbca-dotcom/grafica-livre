@@ -67,12 +67,12 @@ export default function ItensEditor({
 
   const salvarQuickItem = async () => {
     if (!quickItem.nome.trim()) {
-      showToast('Preencha o nome do item.', 'error')
+      showToast('Preencha o nome do produto.', 'error')
       return
     }
     await saveItem(quickItem)
     if (quickItemIdx !== null) selectCatalogoAposCriar(quickItemIdx, quickItem)
-    showToast('Item criado e adicionado!')
+    showToast('Produto criado e adicionado!')
     setQuickItemIdx(null)
   }
 
@@ -100,7 +100,7 @@ export default function ItensEditor({
                 value={item.itemId ?? ''}
                 onChange={(e) => selectCatalogo(idx, e.target.value)}
               >
-                <option value="">— Item do catálogo —</option>
+                <option value="">— Produto do catálogo —</option>
                 {db.itens.map((i) => (
                   <option key={i.id} value={i.id}>{i.nome}</option>
                 ))}
@@ -121,8 +121,8 @@ export default function ItensEditor({
                   type="button"
                   className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-blue-600"
                   onClick={() => clonarItem(idx)}
-                  aria-label="Clonar item"
-                  title="Clonar item"
+                  aria-label="Clonar produto"
+                  title="Clonar produto"
                 >
                   ⎘
                 </button>
@@ -130,8 +130,8 @@ export default function ItensEditor({
                   type="button"
                   className="rounded p-1 text-red-500 hover:bg-red-50"
                   onClick={() => onChange(itens.filter((_, i) => i !== idx))}
-                  aria-label="Remover item"
-                  title="Remover item"
+                  aria-label="Remover produto"
+                  title="Remover produto"
                 >
                   ✕
                 </button>
@@ -228,13 +228,13 @@ export default function ItensEditor({
         className="mt-3"
         onClick={() => onChange([...itens, novoDocumentoItem(impostoPadrao)])}
       >
-        + Adicionar item
+        + Adicionar produto
       </Button>
 
       {/* Cadastro rápido de item, sem sair do orçamento */}
       <Modal
         open={quickItemIdx !== null}
-        title="Novo item do catálogo"
+        title="Novo produto do catálogo"
         onClose={() => setQuickItemIdx(null)}
       >
         <ItemFormFields item={quickItem} onChange={setQuickItem} />
@@ -243,7 +243,7 @@ export default function ItensEditor({
             Cancelar
           </Button>
           <Button type="button" onClick={salvarQuickItem}>
-            Salvar item
+            Salvar produto
           </Button>
         </div>
       </Modal>
