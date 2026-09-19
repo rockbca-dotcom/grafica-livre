@@ -19,11 +19,16 @@ export function maskCpfCnpj(value: string): string {
 
 // Formata como "+55 21 99999-9999" (celular) ou "+55 21 9999-9999" (fixo).
 // O código do país (+55) é fixo; o usuário digita apenas DDD + número.
-export function maskTelefone(value: string): string {
+/** Mantém apenas DDD + número para edição e persistência, aceitando valores legados com 55. */
+export function telefoneParaDigitos(value: string): string {
   let d = onlyDigits(value)
-  // Se o usuário colou o número já com o código do país, remove o 55 inicial.
+  if (d === '55') return ''
   if (d.length > 11 && d.startsWith('55')) d = d.slice(2)
-  d = d.slice(0, 11)
+  return d.slice(0, 11)
+}
+
+export function maskTelefone(value: string): string {
+  const d = telefoneParaDigitos(value)
   if (d.length === 0) return ''
   const ddd = d.slice(0, 2)
   const num = d.slice(2)

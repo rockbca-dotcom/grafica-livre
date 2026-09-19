@@ -8,7 +8,7 @@ import {
   Button, Card, ConfirmDialog, DataTable, EmptyState, Field, Modal,
   PageHeader, SearchBox, inputClass,
 } from '../components/ui'
-import { maskCep, maskCpfCnpj, maskTelefone, onlyDigits, validateDocumento } from '../lib/validation'
+import { maskCep, maskCpfCnpj, maskTelefone, onlyDigits, telefoneParaDigitos, validateDocumento } from '../lib/validation'
 import { buscarCep } from '../lib/viacep'
 import { buscarCnpj } from '../lib/cnpj'
 
@@ -36,6 +36,7 @@ export function ClienteFormFields({
   const adicionais = cliente.emailsAdicionais ?? []
   const [cepStatus, setCepStatus] = useState<'idle' | 'loading'>('idle')
   const [cnpjStatus, setCnpjStatus] = useState<'idle' | 'loading'>('idle')
+  const [telefoneEmEdicao, setTelefoneEmEdicao] = useState(false)
 
   const handleCepBlur = async () => {
     setCepStatus('loading')
@@ -62,7 +63,7 @@ export function ClienteFormFields({
     set({
       nome: cliente.nome || nome,
       email: cliente.email || d.email,
-      telefone: cliente.telefone || (d.telefone ? maskTelefone(d.telefone) : ''),
+      telefone: cliente.telefone || (d.telefone ? telefoneParaDigitos(d.telefone) : ''),
       cep: d.cep ? maskCep(d.cep) : cliente.cep,
       endereco: d.logradouro || cliente.endereco,
       numero: d.numero || cliente.numero,
@@ -104,8 +105,11 @@ export function ClienteFormFields({
       <Field label="Telefone">
         <input
           className={inputClass}
-          value={cliente.telefone}
-          onChange={(e) => set({ telefone: maskTelefone(e.target.value) })}
+          inputMode="tel"
+          value={telefoneEmEdicao ? telefoneParaDigitos(cliente.telefone) : maskTelefone(cliente.telefone)}
+          onFocus={() => setTelefoneEmEdicao(true)}
+          onBlur={() => setTelefoneEmEdicao(false)}
+          onChange={(e) => set({ telefone: telefoneParaDigitos(e.target.value) })}
           placeholder="(21) 99999-9999"
         />
       </Field>

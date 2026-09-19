@@ -4,7 +4,7 @@ import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
 import { EMPRESA_PADRAO } from '../types'
 import { Button, Card, Field, PageHeader, inputClass } from '../components/ui'
-import { maskCep, maskCpfCnpj, maskTelefone } from '../lib/validation'
+import { maskCep, maskCpfCnpj, maskTelefone, telefoneParaDigitos } from '../lib/validation'
 import { buscarCep } from '../lib/viacep'
 
 export default function Perfil() {
@@ -18,6 +18,7 @@ export default function Perfil() {
     condicoesPagamentoPadrao:
       db.empresa.condicoesPagamentoPadrao || EMPRESA_PADRAO.condicoesPagamentoPadrao,
   })
+  const [telefoneEmEdicao, setTelefoneEmEdicao] = useState(false)
 
   const set = (patch: Partial<typeof empresa>) => setEmpresa({ ...empresa, ...patch })
 
@@ -79,8 +80,11 @@ export default function Perfil() {
               <Field label="Telefone / WhatsApp">
                 <input
                   className={inputClass}
-                  value={empresa.telefone}
-                  onChange={(e) => set({ telefone: maskTelefone(e.target.value) })}
+                  inputMode="tel"
+                  value={telefoneEmEdicao ? telefoneParaDigitos(empresa.telefone) : maskTelefone(empresa.telefone)}
+                  onFocus={() => setTelefoneEmEdicao(true)}
+                  onBlur={() => setTelefoneEmEdicao(false)}
+                  onChange={(e) => set({ telefone: telefoneParaDigitos(e.target.value) })}
                 />
               </Field>
               <Field label="E-mail">
