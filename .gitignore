@@ -19,6 +19,7 @@ dist-ssr
 
 # Arquivos temporários da Supabase CLI
 supabase/.temp/
+supabase/functions/.env
 
 # Configuração local do Claude Code
 .claude/
