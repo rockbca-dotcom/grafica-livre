@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import type { EtapaProducao, ProducaoCard } from '../types'
+import type { EtapaProducao, Fatura, ProducaoCard } from '../types'
 import { ETAPAS_PRODUCAO } from '../types'
 import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
 import {
-  Button, ConfirmDialog, CountBadge, EmptyState, Field, Modal, PageHeader, inputClass,
+  Button, ConfirmDialog, CountBadge, EmptyState, Field, Modal, PageHeader, StatusBadge, inputClass,
 } from '../components/ui'
 import { formatCents } from '../lib/money'
 import { formatDateBR, isPast } from '../lib/dates'
+import { ReceberForm } from './Faturas'
 
 const ETAPA_INDEX: Record<EtapaProducao, number> = {
   arte: 0, impressao: 1, acabamento: 2, pronto: 3, entregue: 4,
@@ -40,12 +41,14 @@ function novoCard(): ProducaoCard {
 export default function Producao() {
   const {
     db, clienteById, saveProducaoCard, deleteProducaoCard, moverCard,
-    garantirCardsFaturas,
+    garantirCardsFaturas, valorPago, faturaStatusEfetivo,
+    registrarPagamento, deletePagamento, pagamentosDaFatura,
   } = useData()
   const { showToast } = useToast()
   const [editing, setEditing] = useState<ProducaoCard | null>(null)
   const [arquivar, setArquivar] = useState<ProducaoCard | null>(null)
   const [detalhe, setDetalhe] = useState<ProducaoCard | null>(null)
+  const [recebendo, setRecebendo] = useState<Fatura | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState<EtapaProducao | null>(null)
 
@@ -144,6 +147,8 @@ export default function Producao() {
                     ? db.faturas.find((f) => f.id === card.faturaId)
                     : null
                   const atrasado = card.dataEntrega && isPast(card.dataEntrega)
+                  const pago = fatura ? valorPago(fatura.id) : 0
+                  const saldo = fatura ? fatura.total - pago : 0
                   const idx = ETAPA_INDEX[card.etapa]
                   return (
                     <div
@@ -183,6 +188,34 @@ export default function Producao() {
                           📅 {formatDateBR(card.dataEntrega)}
                           {atrasado ? ' (atrasado)' : ''}
                         </p>
+                      )}
+                      {fatura && (
+                        <div className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 pt-2">
+                          <div>
+                            <p className={`text-xs font-semibold ${saldo > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                              {saldo > 0 ? `${formatCents(saldo)} em aberto` : 'Pagamento concluído'}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              {formatCents(pago)} de {formatCents(fatura.total)} pago
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <StatusBadge status={faturaStatusEfetivo(fatura)} />
+                            {fatura.status !== 'paga' && fatura.status !== 'cancelada' && (
+                              <Button
+                                type="button"
+                                small
+                                variant="success"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setRecebendo(fatura)
+                                }}
+                              >
+                                Receber
+                              </Button>
+                            )}
+                          </div>
+                        </div>
                       )}
                       <div className="mt-2 flex items-center justify-between">
                         <div className="flex gap-1">
@@ -376,6 +409,38 @@ export default function Producao() {
                     <span>Total</span>
                     <span className="text-blue-700">{formatCents(fatura.total)}</span>
                   </div>
+                  <div className="mt-3 rounded-lg bg-slate-50 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold uppercase text-slate-500">Pagamento</span>
+                      <StatusBadge status={faturaStatusEfetivo(fatura)} />
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
+                      <div>
+                        <p className="text-slate-500">Total</p>
+                        <p className="font-semibold text-slate-700">{formatCents(fatura.total)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Pago</p>
+                        <p className="font-semibold text-emerald-700">{formatCents(valorPago(fatura.id))}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Em aberto</p>
+                        <p className="font-semibold text-amber-700">
+                          {formatCents(Math.max(0, fatura.total - valorPago(fatura.id)))}
+                        </p>
+                      </div>
+                    </div>
+                    {fatura.status !== 'paga' && fatura.status !== 'cancelada' && (
+                      <div className="mt-3 flex justify-end">
+                        <Button small variant="success" onClick={() => {
+                          setDetalhe(null)
+                          setRecebendo(fatura)
+                        }}>
+                          Receber pagamento
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <p className="text-slate-500">
@@ -392,6 +457,30 @@ export default function Producao() {
             </div>
           )
         })()}
+      </Modal>
+
+      <Modal
+        open={recebendo !== null}
+        title={`Receber — Fatura ${recebendo?.numero ?? ''}`}
+        onClose={() => setRecebendo(null)}
+      >
+        {recebendo && (
+          <ReceberForm
+            fatura={recebendo}
+            valorPago={valorPago(recebendo.id)}
+            pagamentos={pagamentosDaFatura(recebendo.id)}
+            onRegistrar={async (p) => {
+              await registrarPagamento(p)
+              showToast('Pagamento registrado!')
+              setRecebendo(null)
+            }}
+            onDeletePagamento={async (id) => {
+              await deletePagamento(id)
+              showToast('Pagamento removido.')
+              setRecebendo(null)
+            }}
+          />
+        )}
       </Modal>
 
       <ConfirmDialog
