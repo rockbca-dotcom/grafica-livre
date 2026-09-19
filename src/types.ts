@@ -110,6 +110,29 @@ export interface Pagamento {
   observacao: string
 }
 
+/** Linha de uma venda recebida diretamente no PDV. Não gera fatura nem produção. */
+export interface VendaRapidaItem {
+  id: string
+  itemId: string | null
+  descricao: string
+  qtd: number
+  valorUnit: number // centavos
+  total: number // centavos
+}
+
+/** Venda recebida no balcão/PDV e lançada diretamente no caixa. */
+export interface VendaRapida {
+  id: string
+  numero: string
+  clienteId: string | null
+  data: string // yyyy-mm-dd
+  formaPagamento: FormaPagamento
+  itens: VendaRapidaItem[]
+  total: number // centavos
+  observacao: string
+  criadoEm: string
+}
+
 export interface ContaPagar {
   id: string
   descricao: string
@@ -172,6 +195,7 @@ export interface Database {
   orcamentos: Orcamento[]
   faturas: Fatura[]
   pagamentos: Pagamento[]
+  vendasRapidas: VendaRapida[]
   contasPagar: ContaPagar[]
   producaoCards: ProducaoCard[]
   empresa: Empresa

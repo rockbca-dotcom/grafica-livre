@@ -8,6 +8,7 @@ import type {
   Orcamento,
   Pagamento,
   ProducaoCard,
+  VendaRapida,
 } from '../types'
 import { EMPRESA_PADRAO } from '../types'
 import { supabase } from './supabaseClient'
@@ -18,6 +19,7 @@ export type CollectionName =
   | 'orcamentos'
   | 'faturas'
   | 'pagamentos'
+  | 'vendasRapidas'
   | 'contasPagar'
   | 'producaoCards'
 
@@ -27,6 +29,7 @@ export type CollectionRow =
   | Orcamento
   | Fatura
   | Pagamento
+  | VendaRapida
   | ContaPagar
   | ProducaoCard
 
@@ -52,6 +55,7 @@ export function emptyDatabase(): Database {
     orcamentos: [],
     faturas: [],
     pagamentos: [],
+    vendasRapidas: [],
     contasPagar: [],
     producaoCards: [],
     empresa: { ...EMPRESA_PADRAO },
@@ -127,6 +131,7 @@ const TABLE_BY_COLLECTION: Record<CollectionName, string> = {
   orcamentos: 'orcamentos',
   faturas: 'faturas',
   pagamentos: 'pagamentos',
+  vendasRapidas: 'vendas_rapidas',
   contasPagar: 'contas_pagar',
   producaoCards: 'producao_cards',
 }
@@ -182,6 +187,14 @@ function toRow(collection: CollectionName, r: CollectionRow): Record<string, unk
       return {
         id: p.id, fatura_id: p.faturaId, data: p.data,
         valor: p.valor, forma: p.forma, observacao: p.observacao,
+      }
+    }
+    case 'vendasRapidas': {
+      const v = r as VendaRapida
+      return {
+        id: v.id, numero: v.numero, cliente_id: v.clienteId,
+        data: v.data, forma_pagamento: v.formaPagamento, itens: v.itens,
+        total: v.total, observacao: v.observacao, criado_em: v.criadoEm,
       }
     }
     case 'contasPagar': {
@@ -252,6 +265,14 @@ function fromRow(collection: CollectionName, r: Record<string, unknown>): Collec
         valor: n('valor'), forma: s('forma') as Pagamento['forma'],
         observacao: s('observacao'),
       } as Pagamento
+    case 'vendasRapidas':
+      return {
+        id: s('id'), numero: s('numero'),
+        clienteId: (r.cliente_id as string | null) ?? null,
+        data: s('data'), formaPagamento: s('forma_pagamento') as VendaRapida['formaPagamento'],
+        itens: (r.itens ?? []) as VendaRapida['itens'], total: n('total'),
+        observacao: s('observacao'), criadoEm: s('criado_em'),
+      } as VendaRapida
     case 'contasPagar':
       return {
         id: s('id'), descricao: s('descricao'), categoria: s('categoria'),
@@ -301,7 +322,7 @@ function empresaFromRow(r: Record<string, unknown>): Empresa {
 }
 
 const COLLECTIONS: CollectionName[] = [
-  'clientes', 'itens', 'orcamentos', 'faturas', 'pagamentos', 'contasPagar',
+  'clientes', 'itens', 'orcamentos', 'faturas', 'pagamentos', 'vendasRapidas', 'contasPagar',
   'producaoCards',
 ]
 

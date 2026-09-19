@@ -86,6 +86,20 @@ create table if not exists public.pagamentos (
   observacao text not null default ''
 );
 
+-- Vendas recebidas diretamente no PDV. Não são faturas e não geram produção.
+create table if not exists public.vendas_rapidas (
+  id uuid primary key,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  numero text not null,
+  cliente_id uuid,
+  data date not null,
+  forma_pagamento text not null default 'pix',
+  itens jsonb not null default '[]',
+  total bigint not null default 0,
+  observacao text not null default '',
+  criado_em timestamptz not null default now()
+);
+
 create table if not exists public.contas_pagar (
   id uuid primary key,
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
@@ -158,7 +172,7 @@ alter table public.clientes add column if not exists emails_adicionais jsonb not
 do $$
 declare t text;
 begin
-  foreach t in array array['clientes','itens','orcamentos','faturas','pagamentos','contas_pagar','producao_cards','empresa']
+  foreach t in array array['clientes','itens','orcamentos','faturas','pagamentos','vendas_rapidas','contas_pagar','producao_cards','empresa']
   loop
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "dono" on public.%I', t);
@@ -210,5 +224,6 @@ create index if not exists idx_orcamentos_cliente on public.orcamentos (user_id,
 create index if not exists idx_faturas_cliente on public.faturas (user_id, cliente_id);
 create index if not exists idx_faturas_vencimento on public.faturas (user_id, data_vencimento);
 create index if not exists idx_pagamentos_fatura on public.pagamentos (user_id, fatura_id);
+create index if not exists idx_vendas_rapidas_data on public.vendas_rapidas (user_id, data);
 create index if not exists idx_contas_pagar_venc on public.contas_pagar (user_id, data_vencimento);
 create index if not exists idx_producao_cards_etapa on public.producao_cards (user_id, etapa, ordem);

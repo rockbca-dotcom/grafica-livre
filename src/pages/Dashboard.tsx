@@ -20,7 +20,10 @@ export default function Dashboard() {
     const orcamentosMes = db.orcamentos.filter((o) => monthKey(o.data) === mesAtual)
     const recebidoMes = db.pagamentos
       .filter((p) => monthKey(p.data) === mesAtual)
-      .reduce((s, p) => s + p.valor, 0)
+      .reduce((s, p) => s + p.valor, 0) +
+      db.vendasRapidas
+        .filter((v) => monthKey(v.data) === mesAtual)
+        .reduce((s, v) => s + v.total, 0)
     const pagoMes = db.contasPagar
       .filter((c) => c.status === 'paga' && c.dataPagamento && monthKey(c.dataPagamento) === mesAtual)
       .reduce((s, c) => s + c.valor, 0)
@@ -61,13 +64,16 @@ export default function Dashboard() {
       Recebido:
         db.pagamentos
           .filter((p) => monthKey(p.data) === m)
-          .reduce((s, p) => s + p.valor, 0) / 100,
+          .reduce((s, p) => s + p.valor, 0) / 100 +
+        db.vendasRapidas
+          .filter((v) => monthKey(v.data) === m)
+          .reduce((s, v) => s + v.total, 0) / 100,
       Despesas:
         db.contasPagar
           .filter((c) => c.status === 'paga' && c.dataPagamento && monthKey(c.dataPagamento) === m)
           .reduce((s, c) => s + c.valor, 0) / 100,
     }))
-  }, [db.pagamentos, db.contasPagar])
+  }, [db.pagamentos, db.vendasRapidas, db.contasPagar])
 
   // Funil de orçamentos
   const funil = useMemo(() => {
@@ -127,10 +133,11 @@ export default function Dashboard() {
           to="/orcamentos"
         />
         <KpiCard
-          label="Recebido no mês"
+          label="Entradas no mês"
           value={formatCents(stats.recebidoMes)}
           tone="good"
-          to="/faturas"
+          hint="Faturas + vendas rápidas"
+          to="/relatorios"
         />
         <KpiCard
           label="A receber"

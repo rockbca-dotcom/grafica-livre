@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type {
   Cliente, ContaPagar, Database, Empresa, EtapaProducao, Fatura,
   FaturaStatus, FormaPagamento, Item, Orcamento, Pagamento, ProducaoCard,
+  VendaRapida,
 } from '../types'
 import { createAdapter, emptyDatabase } from '../data/adapter'
 import type { DataAdapter } from '../data/adapter'
@@ -67,6 +68,10 @@ interface DataContextValue {
   ) => Promise<Fatura>
   registrarPagamento: (p: Omit<Pagamento, 'id'>) => Promise<void>
   deletePagamento: (id: string) => Promise<void>
+  createVendaRapida: (
+    v: Omit<VendaRapida, 'id' | 'numero' | 'criadoEm'>,
+  ) => Promise<VendaRapida>
+  deleteVendaRapida: (id: string) => Promise<void>
   pagamentosDaFatura: (faturaId: string) => Pagamento[]
   valorPago: (faturaId: string) => number
   /** Status de exibição: considera atraso pelo vencimento */
@@ -301,6 +306,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }),
         )
       },
+
+      createVendaRapida: async (data) => {
+        const id = crypto.randomUUID()
+        const sufixo = id.replaceAll('-', '').slice(0, 6).toUpperCase()
+        const venda: VendaRapida = {
+          ...data,
+          id,
+          numero: `PDV-${data.data.replaceAll('-', '')}-${sufixo}`,
+          criadoEm: new Date().toISOString(),
+        }
+        await run(
+          () => a().upsert('vendasRapidas', venda),
+          (prev) => ({ ...prev, vendasRapidas: [...prev.vendasRapidas, venda] }),
+        )
+        return venda
+      },
+      deleteVendaRapida: (id) =>
+        run(
+          () => a().remove('vendasRapidas', id),
+          (prev) => ({
+            ...prev,
+            vendasRapidas: prev.vendasRapidas.filter((v) => v.id !== id),
+          }),
+        ),
 
       faturarOrcamento: async (orcamento, dataVencimento, formaPagamento) => {
         const seq = await a().proximoNumero('fatura')

@@ -25,6 +25,7 @@ export default function Relatorios() {
     const faturas = db.faturas.filter(
       (f) => f.status !== 'cancelada' && dentro(f.dataEmissao),
     )
+    const vendasRapidas = db.vendasRapidas.filter((v) => dentro(v.data))
     const porMes = new Map<string, { faturado: number; qtd: number }>()
     for (const f of faturas) {
       const m = monthKey(f.dataEmissao)
@@ -33,17 +34,30 @@ export default function Relatorios() {
       cur.qtd += 1
       porMes.set(m, cur)
     }
-    const recebido = db.pagamentos
+    const porMesPdv = new Map<string, { total: number; qtd: number }>()
+    for (const venda of vendasRapidas) {
+      const m = monthKey(venda.data)
+      const cur = porMesPdv.get(m) ?? { total: 0, qtd: 0 }
+      cur.total += venda.total
+      cur.qtd += 1
+      porMesPdv.set(m, cur)
+    }
+    const recebidoFaturas = db.pagamentos
       .filter((p) => dentro(p.data))
       .reduce((s, p) => s + p.valor, 0)
+    const recebido = recebidoFaturas + vendasRapidas.reduce((s, v) => s + v.total, 0)
     return {
       faturas,
+      vendasRapidas,
       totalFaturado: faturas.reduce((s, f) => s + f.total, 0),
+      totalPdv: vendasRapidas.reduce((s, v) => s + v.total, 0),
+      recebidoFaturas,
       recebido,
       porMes: [...porMes.entries()].sort(([a], [b]) => a.localeCompare(b)),
+      porMesPdv: [...porMesPdv.entries()].sort(([a], [b]) => a.localeCompare(b)),
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [db.faturas, db.pagamentos, de, ate])
+  }, [db.faturas, db.vendasRapidas, db.pagamentos, de, ate])
 
   // ----- Fluxo de caixa: entradas x saídas por mês -----
   const fluxo = useMemo(() => {
@@ -54,6 +68,9 @@ export default function Relatorios() {
     }
     for (const p of db.pagamentos.filter((p) => dentro(p.data))) {
       touch(monthKey(p.data)).entradas += p.valor
+    }
+    for (const venda of db.vendasRapidas.filter((v) => dentro(v.data))) {
+      touch(monthKey(venda.data)).entradas += venda.total
     }
     for (const c of db.contasPagar.filter(
       (c) => c.status === 'paga' && c.dataPagamento && dentro(c.dataPagamento),
@@ -79,7 +96,7 @@ export default function Relatorios() {
       porCategoria: [...porCategoria.entries()].sort(([, a], [, b]) => b - a),
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [db.pagamentos, db.contasPagar, de, ate])
+  }, [db.pagamentos, db.vendasRapidas, db.contasPagar, de, ate])
 
   // ----- Clientes -----
   const clientes = useMemo(() => {
@@ -104,15 +121,27 @@ export default function Relatorios() {
     if (aba === 'vendas') {
       downloadCsv(
         `vendas_${de}_${ate}.csv`,
-        ['Fatura', 'Cliente', 'Emissão', 'Vencimento', 'Total (R$)', 'Status'],
-        vendas.faturas.map((f) => [
-          f.numero,
-          clienteById(f.clienteId)?.nome ?? '',
-          formatDateBR(f.dataEmissao),
-          formatDateBR(f.dataVencimento),
-          (f.total / 100).toFixed(2).replace('.', ','),
-          f.status,
-        ]),
+        ['Origem', 'Número', 'Cliente', 'Emissão', 'Vencimento', 'Total (R$)', 'Status'],
+        [
+          ...vendas.faturas.map((f) => [
+            'Fatura',
+            f.numero,
+            clienteById(f.clienteId)?.nome ?? '',
+            formatDateBR(f.dataEmissao),
+            formatDateBR(f.dataVencimento),
+            (f.total / 100).toFixed(2).replace('.', ','),
+            f.status,
+          ]),
+          ...vendas.vendasRapidas.map((v) => [
+            'PDV',
+            v.numero,
+            v.clienteId ? clienteById(v.clienteId)?.nome ?? '' : 'Balcão',
+            formatDateBR(v.data),
+            '-',
+            (v.total / 100).toFixed(2).replace('.', ','),
+            'paga',
+          ]),
+        ],
       )
     } else if (aba === 'fluxo') {
       downloadCsv(
@@ -194,11 +223,16 @@ export default function Relatorios() {
 
       {aba === 'vendas' && (
         <>
-          <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Card>
-              <p className="text-xs font-semibold uppercase text-slate-500">Faturado</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">Faturado em faturas</p>
               <p className="mt-1 text-2xl font-bold">{formatCents(vendas.totalFaturado)}</p>
               <p className="text-xs text-slate-400">{vendas.faturas.length} fatura(s)</p>
+            </Card>
+            <Card>
+              <p className="text-xs font-semibold uppercase text-blue-600">Vendas rápidas (PDV)</p>
+              <p className="mt-1 text-2xl font-bold text-blue-700">{formatCents(vendas.totalPdv)}</p>
+              <p className="text-xs text-slate-400">{vendas.vendasRapidas.length} venda(s) no caixa</p>
             </Card>
             <Card>
               <p className="text-xs font-semibold uppercase text-emerald-600">Recebido</p>
@@ -209,18 +243,30 @@ export default function Relatorios() {
             <Card>
               <p className="text-xs font-semibold uppercase text-amber-600">Diferença</p>
               <p className="mt-1 text-2xl font-bold text-amber-600">
-                {formatCents(vendas.totalFaturado - vendas.recebido)}
+                {formatCents(vendas.totalFaturado - vendas.recebidoFaturas)}
               </p>
             </Card>
           </div>
           <Card>
-            <h3 className="mb-3 text-sm font-semibold text-slate-700">Faturamento por mês</h3>
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Faturamento por mês — faturas</h3>
             <TabelaSimples
               header={['Mês', 'Faturas', 'Faturado']}
               rows={vendas.porMes.map(([m, v]) => [
                 monthLabel(m),
                 String(v.qtd),
                 formatCents(v.faturado),
+              ])}
+            />
+          </Card>
+          <Card className="mt-4">
+            <h3 className="mb-1 text-sm font-semibold text-slate-700">Vendas rápidas por mês — PDV</h3>
+            <p className="mb-3 text-xs text-slate-400">Recebimentos de balcão separados das faturas e dos pedidos.</p>
+            <TabelaSimples
+              header={['Mês', 'Vendas', 'Total recebido']}
+              rows={vendas.porMesPdv.map(([m, v]) => [
+                monthLabel(m),
+                String(v.qtd),
+                formatCents(v.total),
               ])}
             />
           </Card>

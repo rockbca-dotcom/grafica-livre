@@ -10,6 +10,7 @@ import Clientes from './pages/Clientes'
 import Itens from './pages/Itens'
 import Orcamentos from './pages/Orcamentos'
 import Faturas from './pages/Faturas'
+import Pdv from './pages/Pdv'
 import Producao from './pages/Producao'
 import ContasReceber from './pages/ContasReceber'
 import ContasPagar from './pages/ContasPagar'
@@ -45,6 +46,7 @@ function Gate() {
           <Route index element={<Dashboard />} />
           <Route path="orcamentos" element={<Orcamentos />} />
           <Route path="faturas" element={<Faturas />} />
+          <Route path="pdv" element={<Pdv />} />
           <Route path="producao" element={<Producao />} />
           <Route path="contas-receber" element={<ContasReceber />} />
           <Route path="contas-pagar" element={<ContasPagar />} />

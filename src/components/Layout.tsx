@@ -7,6 +7,7 @@ const NAV = [
   { to: '/', label: 'Dashboard', icon: '📊' },
   { to: '/orcamentos', label: 'Orçamentos', icon: '📝' },
   { to: '/faturas', label: 'Faturas', icon: '🧾' },
+  { to: '/pdv', label: 'PDV — Venda rápida', icon: '🛒' },
   { to: '/producao', label: 'Produção', icon: '🏭' },
   { to: '/contas-receber', label: 'Contas a Receber', icon: '💰' },
   { to: '/contas-pagar', label: 'Contas a Pagar', icon: '💸' },
