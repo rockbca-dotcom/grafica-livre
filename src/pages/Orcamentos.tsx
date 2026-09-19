@@ -67,7 +67,7 @@ const STATUS_FILTROS = [
 export default function Orcamentos() {
   const {
     db, createOrcamento, saveOrcamento, deleteOrcamento, faturarOrcamento,
-    setOrcamentoStatus, clienteById,
+    clienteById,
   } = useData()
   const { cloudMode } = useAuth()
   const { showToast } = useToast()
@@ -271,21 +271,9 @@ export default function Orcamentos() {
                     Editar
                   </Button>
                   {o.status === 'pendente' && (
-                    <>
-                      <Button small variant="success" onClick={() => setFaturando(o)}>
-                        Faturar
-                      </Button>
-                      <Button
-                        small
-                        variant="ghost"
-                        onClick={async () => {
-                          await setOrcamentoStatus(o.id, 'recusado')
-                          showToast('Orçamento marcado como recusado.')
-                        }}
-                      >
-                        Recusar
-                      </Button>
-                    </>
+                    <Button small variant="success" onClick={() => setFaturando(o)}>
+                      Faturar
+                    </Button>
                   )}
                   <Button small variant="danger" onClick={() => setDeleting(o)}>
                     Excluir
