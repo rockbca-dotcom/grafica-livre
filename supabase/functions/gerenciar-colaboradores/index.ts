@@ -22,6 +22,14 @@ function response(body: Record<string, unknown>, status: number, origin: string)
   })
 }
 
+function isValidBirthDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const parsedDate = new Date(`${value}T00:00:00.000Z`)
+  return !Number.isNaN(parsedDate.getTime())
+    && parsedDate.toISOString().slice(0, 10) === value
+    && value <= new Date().toISOString().slice(0, 10)
+}
+
 Deno.serve(async (req: Request) => {
   const origin = (req.headers.get('origin') ?? '').replace(/\/+$/, '')
   if (req.method === 'OPTIONS') return response({}, 200, origin)
@@ -70,7 +78,11 @@ Deno.serve(async (req: Request) => {
 
     const payload = await req.json().catch(() => null) as {
       action?: string
+      birthDate?: string
       email?: string
+      fullName?: string
+      jobTitle?: string
+      password?: string
       userId?: string
     } | null
     const action = payload?.action
@@ -91,10 +103,27 @@ Deno.serve(async (req: Request) => {
       return response({ error: 'Somente o proprietário pode gerenciar colaboradores.' }, 403, origin)
     }
 
-    if (action === 'invite') {
+    if (action === 'create') {
+      const fullName = payload?.fullName?.trim().replace(/\s+/g, ' ') ?? ''
       const email = payload?.email?.trim().toLowerCase() ?? ''
+      const birthDate = payload?.birthDate?.trim() ?? ''
+      const jobTitle = payload?.jobTitle?.trim() ?? ''
+      const password = payload?.password ?? ''
+
+      if (fullName.length < 2 || fullName.length > 120) {
+        return response({ error: 'Informe o nome completo (até 120 caracteres).' }, 400, origin)
+      }
       if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return response({ error: 'Informe um endereço de e-mail válido.' }, 400, origin)
+      }
+      if (!isValidBirthDate(birthDate)) {
+        return response({ error: 'Informe uma data de nascimento válida, que não seja futura.' }, 400, origin)
+      }
+      if (!jobTitle || jobTitle.length > 80) {
+        return response({ error: 'Informe a função (até 80 caracteres).' }, 400, origin)
+      }
+      if (password.length < 8 || password.length > 128) {
+        return response({ error: 'A senha deve ter entre 8 e 128 caracteres.' }, 400, origin)
       }
       if (email === caller.email?.toLowerCase()) {
         return response({ error: 'Este e-mail já é o proprietário da gráfica.' }, 409, origin)
@@ -102,7 +131,7 @@ Deno.serve(async (req: Request) => {
 
       const { data: existing, error: existingError } = await adminClient
         .from('workspace_members')
-        .select('owner_id, user_id, status')
+        .select('owner_id, status')
         .eq('email', email)
         .maybeSingle()
       if (existingError) throw existingError
@@ -111,43 +140,46 @@ Deno.serve(async (req: Request) => {
           return response({ error: 'Este e-mail já está vinculado a outra gráfica.' }, 409, origin)
         }
         if (existing.status === 'revoked') {
-          return response({ error: 'Este colaborador já teve acesso. Use a opção Reativar na lista.' }, 409, origin)
+          return response({ error: 'Este colaborador já está cadastrado. Use a opção Reativar na lista.' }, 409, origin)
         }
-        return response({ error: 'Este e-mail já foi convidado ou já faz parte da equipe.' }, 409, origin)
+        return response({ error: 'Este e-mail já faz parte da equipe.' }, 409, origin)
       }
 
-      const { data: inviteData, error: inviteError } = await adminClient.auth.admin
-        .inviteUserByEmail(email, { redirectTo: `${appUrl}/?invite=1` })
-      if (inviteError) {
-        const message = inviteError.message.toLowerCase()
+      const { data: created, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      })
+      if (createError || !created.user) {
+        const message = createError?.message.toLowerCase() ?? ''
         if (message.includes('already') || message.includes('registered') || message.includes('exists')) {
-          return response({
-            error: 'Este e-mail já possui uma conta no sistema. O colaborador pode acessar com a senha atual ou redefini-la pelo login.',
-          }, 409, origin)
+          return response({ error: 'Este e-mail já possui uma conta no sistema.' }, 409, origin)
         }
-        console.error('Falha ao enviar convite:', inviteError.message)
-        return response({ error: 'Não foi possível enviar o convite. Verifique a configuração de e-mail do Supabase.' }, 502, origin)
-      }
-
-      const invitedUserId = inviteData.user?.id
-      if (!invitedUserId) {
-        return response({ error: 'O convite foi iniciado, mas o Supabase não retornou o usuário convidado.' }, 502, origin)
+        console.error('Falha ao criar a conta do colaborador:', createError?.message ?? 'usuário não retornado')
+        return response({ error: 'Não foi possível criar a conta. Verifique se a senha atende às regras do Supabase.' }, 400, origin)
       }
 
       const { error: insertError } = await adminClient.from('workspace_members').insert({
         owner_id: membership.owner_id,
-        user_id: invitedUserId,
+        user_id: created.user.id,
         email,
+        full_name: fullName,
+        birth_date: birthDate,
+        job_title: jobTitle,
         role: 'member',
-        status: 'invited',
-        invited_at: new Date().toISOString(),
+        status: 'active',
       })
       if (insertError) {
-        console.error('Falha ao vincular o colaborador convidado:', insertError.message)
-        return response({ error: 'O convite foi enviado, mas não foi possível vincular o acesso. Contate o suporte antes de reenviar.' }, 500, origin)
+        const { error: cleanupError } = await adminClient.auth.admin.deleteUser(created.user.id)
+        if (cleanupError) {
+          console.error('Falha ao vincular e limpar a conta do colaborador:', insertError.message, cleanupError.message)
+          return response({ error: 'A conta foi criada, mas não foi possível vinculá-la à equipe. Contate o suporte antes de tentar novamente.' }, 500, origin)
+        }
+        console.error('Falha ao vincular a conta do colaborador; a conta foi removida:', insertError.message)
+        return response({ error: 'Não foi possível vincular o colaborador à equipe. Revise os dados e tente novamente.' }, 500, origin)
       }
 
-      return response({ ok: true, message: `Convite enviado para ${email}.` }, 200, origin)
+      return response({ ok: true, message: `${fullName} foi cadastrado e já pode acessar o sistema.` }, 200, origin)
     }
 
     if (action === 'revoke' || action === 'reactivate') {
