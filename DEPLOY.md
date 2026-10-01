@@ -67,7 +67,7 @@ Todos os colaboradores autorizados usam o mesmo link e trabalham nos mesmos dado
 
 ### Ativar Equipe em uma instalação existente
 
-Se o sistema já está em produção, aplique apenas a migração `supabase/migrations/20261001000000_multiusuarios.sql` no **SQL Editor** do projeto antes de publicar o frontend. Ela mantém os registros existentes no espaço do usuário atual.
+Se o sistema já está em produção, aplique as migrações em `supabase/migrations/` em ordem no **SQL Editor** do projeto antes de publicar o frontend. Elas mantêm os registros existentes no espaço do usuário atual.
 
 Depois publique a Edge Function `gerenciar-colaboradores` com validação JWT ativada. Configure `APP_URL` com a URL publicada do app e `APP_ALLOWED_ORIGINS` com essa URL (separe URLs adicionais por vírgula). A função usa as variáveis padrão `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` do ambiente Supabase; a chave privilegiada não deve ser copiada para a Vercel nem para o navegador.
 

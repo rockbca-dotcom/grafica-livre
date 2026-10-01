@@ -137,6 +137,7 @@ create or replace function public.proximo_numero_documento(p_tipo text)
 returns int
 language plpgsql
 security invoker
+set search_path = ''
 as $$
 declare
   v_num int;
