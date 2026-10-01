@@ -151,11 +151,14 @@ create table if not exists public.empresa (
 );
 
 -- Um espaço por usuário, com membros associados ao usuário proprietário.
--- Convites são criados pela Edge Function com a chave service_role.
+-- Cadastros de colaboradores são criados pela Edge Function com a chave service_role.
 create table if not exists public.workspace_members (
   user_id uuid primary key references auth.users (id) on delete cascade,
   owner_id uuid not null references auth.users (id) on delete cascade,
   email text not null default '',
+  full_name text not null default '',
+  birth_date date,
+  job_title text not null default '',
   role text not null default 'owner' check (role in ('owner', 'member')),
   status text not null default 'active' check (status in ('active', 'invited', 'revoked')),
   invited_at timestamptz,
@@ -244,6 +247,9 @@ grant execute on function public.current_workspace_owner_id() to authenticated;
 
 -- Migrações incrementais: adicionam colunas novas sem recriar as tabelas.
 -- Seguro rodar várias vezes.
+alter table public.workspace_members add column if not exists full_name text not null default '';
+alter table public.workspace_members add column if not exists birth_date date;
+alter table public.workspace_members add column if not exists job_title text not null default '';
 alter table public.clientes add column if not exists numero text not null default '';
 alter table public.clientes add column if not exists complemento text not null default '';
 -- Imposto por documento e desconto
@@ -268,7 +274,7 @@ create policy "workspace_members_select" on public.workspace_members
   for select to authenticated
   using (
     user_id = (select auth.uid())
-    or owner_id = (select public.current_workspace_owner_id())
+    or owner_id = (select auth.uid())
   );
 revoke all on table public.workspace_members from public, anon, authenticated;
 grant select on table public.workspace_members to authenticated;
