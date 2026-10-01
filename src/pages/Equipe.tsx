@@ -8,6 +8,9 @@ import { useToast } from '../context/ToastContext'
 interface WorkspaceMember {
   user_id: string
   email: string
+  full_name: string
+  birth_date: string | null
+  job_title: string
   role: 'owner' | 'member'
   status: 'active' | 'invited' | 'revoked'
   created_at: string
@@ -18,7 +21,12 @@ export default function Equipe() {
   const { cloudMode, session } = useAuth()
   const { showToast } = useToast()
   const [members, setMembers] = useState<WorkspaceMember[]>([])
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
+  const [birthDate, setBirthDate] = useState('')
+  const [jobTitle, setJobTitle] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -35,7 +43,7 @@ export default function Equipe() {
     setLoadError(null)
     const { data, error } = await supabase
       .from('workspace_members')
-      .select('user_id, email, role, status, created_at, invited_at')
+      .select('user_id, email, full_name, birth_date, job_title, role, status, created_at, invited_at')
       .order('created_at', { ascending: true })
     if (error) {
       setLoadError('Não foi possível carregar os colaboradores. Atualize a página e tente novamente.')
@@ -63,16 +71,32 @@ export default function Equipe() {
     return data as { message?: string }
   }
 
-  const handleInvite = async (event: FormEvent<HTMLFormElement>) => {
+  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (password !== confirmPassword) {
+      showToast('As senhas não coincidem.', 'error')
+      return
+    }
     setBusy(true)
     try {
-      const result = await invoke({ action: 'invite', email })
-      showToast(result.message ?? 'Convite enviado por e-mail.')
+      const result = await invoke({
+        action: 'create',
+        fullName,
+        email,
+        birthDate,
+        jobTitle,
+        password,
+      })
+      showToast(result.message ?? 'Colaborador cadastrado com acesso ativo.')
+      setFullName('')
       setEmail('')
+      setBirthDate('')
+      setJobTitle('')
+      setPassword('')
+      setConfirmPassword('')
       await loadMembers()
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Não foi possível enviar o convite.', 'error')
+      showToast(error instanceof Error ? error.message : 'Não foi possível cadastrar o colaborador.', 'error')
     } finally {
       setBusy(false)
     }
@@ -96,7 +120,7 @@ export default function Equipe() {
     <div>
       <PageHeader
         title="Equipe"
-        subtitle="Convide colaboradores para trabalhar nos mesmos dados da gráfica"
+        subtitle="Cadastre e gerencie os colaboradores que acessam os dados da gráfica"
       />
 
       {!cloudMode && (
@@ -111,27 +135,89 @@ export default function Equipe() {
         <div className="space-y-4">
           {isOwner && (
             <Card>
-              <h2 className="mb-1 text-base font-semibold text-slate-800">Convidar colaborador</h2>
+              <h2 className="mb-1 text-base font-semibold text-slate-800">Cadastrar colaborador</h2>
               <p className="mb-4 text-sm text-slate-500">
-                A pessoa receberá um convite por e-mail e criará a própria senha. Os colaboradores
-                compartilham clientes, produtos, orçamentos, faturas e demais dados desta gráfica.
+                O acesso será criado na hora. A senha é protegida pelo Supabase; compartilhe as credenciais com o colaborador por um canal seguro.
               </p>
-              <form onSubmit={handleInvite} className="flex flex-col items-end gap-3 sm:flex-row">
-                <Field label="E-mail do colaborador" className="w-full flex-1">
-                  <input
-                    type="email"
-                    required
-                    maxLength={254}
-                    autoComplete="email"
-                    className={inputClass}
-                    placeholder="colaborador@empresa.com.br"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                  />
-                </Field>
-                <Button type="submit" disabled={busy} className="w-full sm:w-auto">
-                  {busy ? 'Enviando...' : 'Enviar convite'}
-                </Button>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <Field label="Nome completo">
+                    <input
+                      type="text"
+                      required
+                      minLength={2}
+                      maxLength={120}
+                      autoComplete="name"
+                      className={inputClass}
+                      placeholder="Nome e sobrenome"
+                      value={fullName}
+                      onChange={(event) => setFullName(event.target.value)}
+                    />
+                  </Field>
+                  <Field label="E-mail">
+                    <input
+                      type="email"
+                      required
+                      maxLength={254}
+                      autoComplete="email"
+                      className={inputClass}
+                      placeholder="colaborador@empresa.com.br"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                    />
+                  </Field>
+                  <Field label="Data de nascimento">
+                    <input
+                      type="date"
+                      required
+                      autoComplete="bday"
+                      className={inputClass}
+                      value={birthDate}
+                      onChange={(event) => setBirthDate(event.target.value)}
+                    />
+                  </Field>
+                  <Field label="Função">
+                    <input
+                      type="text"
+                      required
+                      maxLength={80}
+                      autoComplete="organization-title"
+                      className={inputClass}
+                      placeholder="Ex.: Atendimento, Designer"
+                      value={jobTitle}
+                      onChange={(event) => setJobTitle(event.target.value)}
+                    />
+                  </Field>
+                  <Field label="Senha inicial">
+                    <input
+                      type="password"
+                      required
+                      minLength={8}
+                      maxLength={128}
+                      autoComplete="new-password"
+                      className={inputClass}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                    />
+                  </Field>
+                  <Field label="Confirmar senha">
+                    <input
+                      type="password"
+                      required
+                      minLength={8}
+                      maxLength={128}
+                      autoComplete="new-password"
+                      className={inputClass}
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                    />
+                  </Field>
+                </div>
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={busy} className="w-full sm:w-auto">
+                    {busy ? 'Cadastrando...' : 'Cadastrar colaborador'}
+                  </Button>
+                </div>
               </form>
             </Card>
           )}
@@ -140,7 +226,7 @@ export default function Equipe() {
             <Card>
               <p className="text-sm text-slate-600">
                 Você está acessando os dados compartilhados da gráfica. Somente o proprietário pode
-                gerenciar os convites e os acessos da equipe.
+                gerenciar os colaboradores e seus acessos.
               </p>
             </Card>
           )}
@@ -168,12 +254,15 @@ export default function Equipe() {
                   <div key={member.user_id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-slate-800">
-                        {member.email || 'E-mail não disponível'}
+                        {member.full_name || member.email || 'Nome não disponível'}
                         {member.user_id === session?.user.id && <span className="ml-2 text-xs text-slate-400">(você)</span>}
                       </p>
+                      <p className="mt-1 truncate text-xs text-slate-500">{member.email || 'E-mail não disponível'}</p>
                       <p className="mt-1 text-xs text-slate-500">
-                        {member.role === 'owner' ? 'Proprietário' : 'Colaborador'} ·{' '}
-                        {member.status === 'active' ? 'Ativo' : member.status === 'invited' ? 'Convite enviado' : 'Acesso revogado'}
+                        {member.role === 'owner' ? 'Proprietário' : 'Colaborador'}
+                        {member.job_title ? ` · ${member.job_title}` : ''}
+                        {member.birth_date ? ` · Nascimento: ${new Date(`${member.birth_date}T00:00:00`).toLocaleDateString('pt-BR')}` : ''}
+                        {' · '}{member.status === 'active' ? 'Ativo' : member.status === 'invited' ? 'Convite enviado' : 'Acesso revogado'}
                       </p>
                     </div>
                     {isOwner && member.role === 'member' && (
@@ -210,7 +299,7 @@ export default function Equipe() {
       <ConfirmDialog
         open={Boolean(pendingRemoval)}
         title="Revogar acesso do colaborador?"
-        message={`A pessoa deixará de acessar os dados desta gráfica. O cadastro permanece na lista e poderá ser reativado depois.${pendingRemoval ? ` Colaborador: ${pendingRemoval.email}.` : ''}`}
+        message={`A pessoa deixará de acessar os dados desta gráfica. O cadastro permanece na lista e poderá ser reativado depois.${pendingRemoval ? ` Colaborador: ${pendingRemoval.full_name || pendingRemoval.email}.` : ''}`}
         confirmLabel={busy ? 'Revogando...' : 'Revogar acesso'}
         danger
         onCancel={() => setPendingRemoval(null)}
