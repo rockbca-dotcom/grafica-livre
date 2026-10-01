@@ -62,10 +62,6 @@ export function emptyDatabase(): Database {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Adapter local (localStorage) — modo demonstração / sem Supabase configurado
-// ---------------------------------------------------------------------------
-
 const LOCAL_KEY = 'graficaLivre'
 
 export class LocalAdapter implements DataAdapter {
@@ -121,10 +117,6 @@ export class LocalAdapter implements DataAdapter {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Adapter Supabase — produção
-// ---------------------------------------------------------------------------
-
 const TABLE_BY_COLLECTION: Record<CollectionName, string> = {
   clientes: 'clientes',
   itens: 'itens',
@@ -135,9 +127,6 @@ const TABLE_BY_COLLECTION: Record<CollectionName, string> = {
   contasPagar: 'contas_pagar',
   producaoCards: 'producao_cards',
 }
-
-/* Conversão camelCase <-> snake_case por coleção. Itens de orçamento/fatura
-   são guardados em coluna JSONB, mantendo a escrita atômica. */
 
 function toRow(collection: CollectionName, r: CollectionRow): Record<string, unknown> {
   switch (collection) {
@@ -327,12 +316,28 @@ const COLLECTIONS: CollectionName[] = [
 ]
 
 export class SupabaseAdapter implements DataAdapter {
+  private workspaceOwnerId: string | null = null
+
   private get client() {
     if (!supabase) throw new Error('Supabase não configurado')
     return supabase
   }
 
+  private async getWorkspaceOwnerId(): Promise<string> {
+    if (this.workspaceOwnerId) return this.workspaceOwnerId
+
+    const { data, error } = await this.client.rpc('ensure_workspace_membership')
+    if (error) throw error
+    if (typeof data !== 'string') {
+      throw new Error('Este usuário não está vinculado a uma gráfica ativa. Entre em contato com o administrador.')
+    }
+
+    this.workspaceOwnerId = data
+    return this.workspaceOwnerId
+  }
+
   async load(): Promise<Database> {
+    await this.getWorkspaceOwnerId()
     const db = emptyDatabase()
     const results = await Promise.all(
       COLLECTIONS.map((c) => this.client.from(TABLE_BY_COLLECTION[c]).select('*')),
@@ -349,9 +354,10 @@ export class SupabaseAdapter implements DataAdapter {
   }
 
   async upsert(collection: CollectionName, row: CollectionRow): Promise<void> {
+    const ownerId = await this.getWorkspaceOwnerId()
     const { error } = await this.client
       .from(TABLE_BY_COLLECTION[collection])
-      .upsert(toRow(collection, row))
+      .upsert({ ...toRow(collection, row), user_id: ownerId })
     if (error) throw error
   }
 
@@ -364,17 +370,14 @@ export class SupabaseAdapter implements DataAdapter {
   }
 
   async saveEmpresa(empresa: Empresa): Promise<void> {
-    const { data: userData } = await this.client.auth.getUser()
-    const userId = userData.user?.id
-    if (!userId) throw new Error('Sessão expirada')
+    const ownerId = await this.getWorkspaceOwnerId()
     const { error } = await this.client
       .from('empresa')
-      .upsert({ user_id: userId, ...empresaToRow(empresa) })
+      .upsert({ user_id: ownerId, ...empresaToRow(empresa) })
     if (error) throw error
   }
 
   async proximoNumero(tipo: 'orcamento' | 'fatura'): Promise<number> {
-    // Incremento atômico no servidor (função proximo_numero_documento).
     const { data, error } = await this.client.rpc('proximo_numero_documento', {
       p_tipo: tipo,
     })
@@ -386,7 +389,7 @@ export class SupabaseAdapter implements DataAdapter {
   }
 
   async replaceAll(db: Database): Promise<void> {
-    // Apaga tudo e regrava (importação de backup)
+    const ownerId = await this.getWorkspaceOwnerId()
     for (const c of [...COLLECTIONS].reverse()) {
       const { error } = await this.client
         .from(TABLE_BY_COLLECTION[c])
@@ -395,9 +398,11 @@ export class SupabaseAdapter implements DataAdapter {
       if (error) throw error
     }
     for (const c of COLLECTIONS) {
-      const rows = (db[c] as CollectionRow[]).map((r) => toRow(c, r))
+      const rows = (db[c] as CollectionRow[]).map((r) => ({
+        ...toRow(c, r),
+        user_id: ownerId,
+      }))
       if (rows.length === 0) continue
-      // Insere em lotes para não estourar o payload
       for (let i = 0; i < rows.length; i += 200) {
         const { error } = await this.client
           .from(TABLE_BY_COLLECTION[c])

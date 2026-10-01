@@ -38,6 +38,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe()
   }, [])
 
+  useEffect(() => {
+    const userId = session?.user.id
+    if (!supabase || !userId) return
+
+    const channel = supabase
+      .channel(`workspace-access:${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'workspace_members', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const membership = payload.new as { status?: string }
+          if (membership.status === 'revoked') void supabase?.auth.signOut()
+        },
+      )
+      .subscribe()
+
+    return () => {
+      void supabase?.removeChannel(channel)
+    }
+  }, [session?.user.id])
+
   const value: AuthContextValue = {
     cloudMode: isSupabaseConfigured,
     session,
@@ -55,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resetPassword: async (email) => {
       if (!supabase) return 'Supabase não configurado'
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin,
+        redirectTo: `${window.location.origin}/?reset=1`,
       })
       return error ? error.message : null
     },

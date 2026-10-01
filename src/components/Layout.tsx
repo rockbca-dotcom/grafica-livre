@@ -16,6 +16,7 @@ const NAV = [
   { to: '/itens', label: 'Produtos', icon: '📦' },
   { to: '/relatorios', label: 'Relatórios', icon: '📈' },
   { to: '/perfil', label: 'Perfil da Empresa', icon: '🏢' },
+  { to: '/equipe', label: 'Equipe', icon: '👥' },
   { to: '/configuracoes', label: 'Configurações', icon: '⚙️' },
 ]
 
@@ -26,7 +27,6 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Botão hambúrguer (mobile) */}
       <button
         className="fixed left-3 top-3 z-40 rounded-lg bg-slate-800 px-3 py-2 text-white shadow-lg lg:hidden"
         onClick={() => setOpen(!open)}
@@ -35,7 +35,6 @@ export default function Layout() {
         ☰
       </button>
 
-      {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-slate-900 text-slate-200 transition-transform lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
@@ -48,7 +47,7 @@ export default function Layout() {
           <p className="mt-0.5 text-xs text-slate-400">Gestão para gráficas</p>
         </div>
         <nav className="mt-2 flex flex-col gap-0.5 px-3">
-          {NAV.map((item) => (
+          {NAV.filter((item) => item.to !== '/equipe' || (cloudMode && session)).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -89,7 +88,6 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Overlay mobile */}
       {open && (
         <div
           className="fixed inset-0 z-20 bg-black/40 lg:hidden"
@@ -97,7 +95,6 @@ export default function Layout() {
         />
       )}
 
-      {/* Conteúdo */}
       <main className="min-w-0 flex-1 px-4 py-6 pt-16 lg:ml-64 lg:px-8 lg:pt-6">
         {loading ? (
           <div className="flex h-64 items-center justify-center text-slate-500">

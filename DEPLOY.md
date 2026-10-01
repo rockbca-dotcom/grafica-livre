@@ -19,11 +19,11 @@ Tempo estimado: 20–30 minutos.
 4. Menu **SQL Editor** → **New query**.
 5. Abra o arquivo `supabase/schema.sql` deste repositório, cole o conteúdo inteiro e clique em **Run**.
 6. Menu **Authentication → Users → Add user → Create new user**.
-   - Crie o e-mail/senha de cada pessoa da equipe.
+   - Crie o primeiro usuário, que será o proprietário da gráfica.
    - Marque *Auto Confirm User*.
 7. **Authentication → Sign In / Providers → Email**
    - Desligue **Allow new users to sign up**.
-   - Assim só entra quem você cadastrou.
+   - Assim, só entram o proprietário e os colaboradores convidados.
 8. Menu **Project Settings → API** (ou **Data API**).
    Anote:
    - **Project URL** → vira `VITE_SUPABASE_URL`
@@ -59,10 +59,17 @@ Salve.
 
 1. Abra o endereço da Vercel.
 2. Entre com o e-mail/senha criado no Supabase.
-3. Preencha **Configurações** da gráfica de novo (no modo nuvem o banco começa vazio).
+3. Preencha **Perfil da Empresa** da gráfica (no modo nuvem o banco começa vazio).
 4. Cadastre itens, clientes e o primeiro orçamento.
+5. Acesse **Equipe** e convide cada colaborador pelo e-mail. Cada pessoa cria a própria senha pelo link recebido.
 
-Cada pessoa da equipe usa o mesmo link e o mesmo banco.
+Todos os colaboradores autorizados usam o mesmo link e trabalham nos mesmos dados da gráfica. O proprietário pode revogar e reativar acessos na tela **Equipe**.
+
+### Ativar Equipe em uma instalação existente
+
+Se o sistema já está em produção, aplique apenas a migração `supabase/migrations/20261001000000_multiusuarios.sql` no **SQL Editor** do projeto antes de publicar o frontend. Ela mantém os registros existentes no espaço do usuário atual.
+
+Depois publique a Edge Function `gerenciar-colaboradores` com validação JWT ativada. Configure `APP_URL` com a URL publicada do app e `APP_ALLOWED_ORIGINS` com essa URL (separe URLs adicionais por vírgula). A função usa as variáveis padrão `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` do ambiente Supabase; a chave privilegiada não deve ser copiada para a Vercel nem para o navegador.
 
 ## Domínio próprio (opcional)
 
