@@ -23,7 +23,7 @@ Tempo estimado: 20–30 minutos.
    - Marque *Auto Confirm User*.
 7. **Authentication → Sign In / Providers → Email**
    - Desligue **Allow new users to sign up**.
-   - Assim, só entram o proprietário e os colaboradores convidados.
+   - Assim, somente o proprietário cadastra colaboradores pela seção **Equipe**.
 8. Menu **Project Settings → API** (ou **Data API**).
    Anote:
    - **Project URL** → vira `VITE_SUPABASE_URL`
@@ -61,9 +61,10 @@ Salve.
 2. Entre com o e-mail/senha criado no Supabase.
 3. Preencha **Perfil da Empresa** da gráfica (no modo nuvem o banco começa vazio).
 4. Cadastre itens, clientes e o primeiro orçamento.
-5. Acesse **Equipe** e convide cada colaborador pelo e-mail. Cada pessoa cria a própria senha pelo link recebido.
+5. Acesse **Equipe** e cadastre cada colaborador com nome completo, e-mail, data de nascimento, função e senha inicial.
+   O acesso fica ativo imediatamente. Compartilhe a senha com o colaborador por um canal seguro.
 
-Todos os colaboradores autorizados usam o mesmo link e trabalham nos mesmos dados da gráfica. O proprietário pode revogar e reativar acessos na tela **Equipe**.
+Todos os colaboradores cadastrados usam o mesmo link e trabalham nos mesmos dados da gráfica. O proprietário pode revogar e reativar acessos na tela **Equipe**. O sistema cria as contas diretamente no Supabase e não depende do envio de convites por e-mail.
 
 ### Ativar Equipe em uma instalação existente
 
