@@ -435,7 +435,7 @@ function blocoEntrega(cliente: Cliente | undefined): Content {
 }
 
 // Tabela de itens da remessa — quantidades e medidas, sem preços.
-function tabelaItensRemessa(doc: Fatura): Content {
+function tabelaItensRemessa(doc: Orcamento | Fatura): Content {
   const temMedidas = doc.itens.some((i) => i.m2 > 0)
   const header: TableCell[] = temMedidas
     ? ['#', 'Descrição', 'Qtd', 'Larg. (m)', 'Alt. (m)', 'm²', 'Conf.']
@@ -512,6 +512,43 @@ function blocoRecebimento(): Content {
       },
     ],
   }
+}
+
+function retiradaProdutosDocDef(
+  orcamento: Orcamento,
+  cliente: Cliente | undefined,
+  empresa: Empresa,
+): TDocumentDefinitions {
+  return {
+    pageSize: 'A4',
+    pageMargins: [40, 40, 40, 50],
+    defaultStyle: { color: PRETO },
+    content: [
+      cabecalho(empresa, 'RETIRADA DE PRODUTOS', orcamento.numero),
+      blocoCliente(cliente),
+      {
+        columns: [
+          { text: [{ text: 'Data do orçamento: ', bold: true }, formatDateBR(orcamento.data)], fontSize: 9 },
+          { text: [{ text: 'Prazo de entrega: ', bold: true }, orcamento.prazoEntrega || '—'], fontSize: 9 },
+          { text: [{ text: 'Retirado em: ', bold: true }, '____/____/______'], fontSize: 9, alignment: 'right' },
+        ],
+        margin: [0, 0, 0, 10] as [number, number, number, number],
+      },
+      tabelaItensRemessa(orcamento),
+      ...blocoTexto('Observações', orcamento.observacoes),
+      blocoRecebimento(),
+      rodape(`${empresa.nome} — comprovante de retirada sem valores comerciais.`),
+    ],
+  }
+}
+
+/** Abre a impressão dos itens do orçamento sem exibir valores comerciais. */
+export function imprimirRetiradaProdutos(
+  orcamento: Orcamento,
+  cliente: Cliente | undefined,
+  empresa: Empresa,
+) {
+  pdfMake.createPdf(retiradaProdutosDocDef(orcamento, cliente, empresa)).print()
 }
 
 function guiaRemessaDocDef(

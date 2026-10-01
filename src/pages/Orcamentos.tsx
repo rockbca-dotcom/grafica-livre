@@ -26,6 +26,13 @@ async function gerarOrcamentoPdf(
   mod.gerarOrcamentoPdf(...args)
 }
 
+async function imprimirRetiradaProdutos(
+  ...args: Parameters<typeof import('../pdf/documentoPdf')['imprimirRetiradaProdutos']>
+) {
+  const mod = await import('../pdf/documentoPdf')
+  mod.imprimirRetiradaProdutos(...args)
+}
+
 async function orcamentoPdfBase64(
   ...args: Parameters<typeof import('../pdf/documentoPdf')['orcamentoPdfBase64']>
 ) {
@@ -239,6 +246,13 @@ export default function Orcamentos() {
                     onClick={() => gerarOrcamentoPdf(o, clienteById(o.clienteId), db.empresa)}
                   >
                     PDF
+                  </Button>
+                  <Button
+                    small
+                    variant="secondary"
+                    onClick={() => imprimirRetiradaProdutos(o, clienteById(o.clienteId), db.empresa)}
+                  >
+                    Retirada de Produtos
                   </Button>
                   {cloudMode && (
                     <Button small variant="secondary" onClick={() => setEmailOrcamento(o)}>
