@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { DataProvider } from './context/DataContext'
 import { ToastProvider } from './context/ToastContext'
@@ -17,9 +17,15 @@ import ContasPagar from './pages/ContasPagar'
 import Relatorios from './pages/Relatorios'
 import Perfil from './pages/Perfil'
 import Configuracoes from './pages/Configuracoes'
+import Equipe from './pages/Equipe'
+import DefinirSenha from './pages/DefinirSenha'
 
 function Gate() {
   const { cloudMode, session, loading } = useAuth()
+  const location = useLocation()
+  const passwordSetupRequest = new URLSearchParams(window.location.search).has('invite') ||
+    new URLSearchParams(window.location.search).has('reset')
+  const definingPassword = passwordSetupRequest && location.pathname !== '/login'
 
   if (loading) {
     return (
@@ -39,6 +45,8 @@ function Gate() {
     )
   }
 
+  if (cloudMode && session && definingPassword) return <DefinirSenha />
+
   return (
     <DataProvider>
       <Routes>
@@ -55,6 +63,7 @@ function Gate() {
           <Route path="relatorios" element={<Relatorios />} />
           <Route path="perfil" element={<Perfil />} />
           <Route path="configuracoes" element={<Configuracoes />} />
+          <Route path="equipe" element={<Equipe />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -3,8 +3,8 @@
 --
 -- Valores monetários são inteiros em CENTAVOS.
 -- Itens de orçamento/fatura ficam em coluna JSONB (escrita atômica, sem joins).
--- Todas as tabelas têm user_id preenchido automaticamente com auth.uid()
--- e RLS que restringe cada linha ao seu dono.
+-- Registros usam o user_id do dono do espaço da gráfica; colaboradores
+-- autorizados compartilham os mesmos dados por meio de workspace_members.
 
 create table if not exists public.clientes (
   id uuid primary key,
@@ -150,6 +150,98 @@ create table if not exists public.empresa (
   condicoes_pagamento_padrao text not null default ''
 );
 
+-- Um espaço por usuário, com membros associados ao usuário proprietário.
+-- Convites são criados pela Edge Function com a chave service_role.
+create table if not exists public.workspace_members (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  owner_id uuid not null references auth.users (id) on delete cascade,
+  email text not null default '',
+  role text not null default 'owner' check (role in ('owner', 'member')),
+  status text not null default 'active' check (status in ('active', 'invited', 'revoked')),
+  invited_at timestamptz,
+  created_at timestamptz not null default now(),
+  constraint workspace_owner_is_self check (role <> 'owner' or owner_id = user_id)
+);
+
+create index if not exists idx_workspace_members_owner
+  on public.workspace_members (owner_id, created_at);
+create unique index if not exists idx_workspace_members_email_active
+  on public.workspace_members (lower(email))
+  where status in ('active', 'invited') and email <> '';
+
+-- Mantém a conta e todos os dados já existentes no espaço atual do usuário.
+insert into public.workspace_members (owner_id, user_id, email, role, status)
+select u.id, u.id, lower(coalesce(u.email, '')), 'owner', 'active'
+from auth.users u
+on conflict (user_id) do nothing;
+
+-- Usuários existentes podem criar seu próprio espaço sem tocar em outros.
+-- Contas de convite (invited_at não nulo) só entram pelo fluxo da Edge Function.
+create or replace function public.ensure_workspace_membership()
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := (select auth.uid());
+  v_owner_id uuid;
+  v_email text;
+  v_invited_at timestamptz;
+begin
+  if v_user_id is null then
+    raise exception 'autenticação necessária';
+  end if;
+
+  select wm.owner_id into v_owner_id
+  from public.workspace_members wm
+  where wm.user_id = v_user_id and wm.status in ('active', 'invited')
+  limit 1;
+  if v_owner_id is not null then
+    return v_owner_id;
+  end if;
+
+  select lower(coalesce(u.email, '')), u.invited_at
+  into v_email, v_invited_at
+  from auth.users u where u.id = v_user_id;
+  if not found or v_invited_at is not null then
+    return null;
+  end if;
+
+  insert into public.workspace_members (owner_id, user_id, email, role, status)
+  values (v_user_id, v_user_id, v_email, 'owner', 'active')
+  on conflict (user_id) do nothing;
+
+  select wm.owner_id into v_owner_id
+  from public.workspace_members wm
+  where wm.user_id = v_user_id and wm.status = 'active'
+  limit 1;
+  return v_owner_id;
+end;
+$$;
+
+revoke all on function public.ensure_workspace_membership() from public, anon;
+grant execute on function public.ensure_workspace_membership() to authenticated;
+
+-- A função é SECURITY DEFINER para que as policies possam consultar a tabela
+-- de membros sem recursão de RLS. Ela só retorna o espaço do usuário do JWT.
+create or replace function public.current_workspace_owner_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select wm.owner_id
+  from public.workspace_members wm
+  where wm.user_id = (select auth.uid())
+    and wm.status in ('active', 'invited')
+  limit 1;
+$$;
+
+revoke all on function public.current_workspace_owner_id() from public, anon;
+grant execute on function public.current_workspace_owner_id() to authenticated;
+
 -- Migrações incrementais: adicionam colunas novas sem recriar as tabelas.
 -- Seguro rodar várias vezes.
 alter table public.clientes add column if not exists numero text not null default '';
@@ -168,7 +260,34 @@ alter table public.faturas add column if not exists condicoes_pagamento text not
 -- Vários e-mails por cliente (além do principal)
 alter table public.clientes add column if not exists emails_adicionais jsonb not null default '[]';
 
--- Row Level Security: cada usuário só enxerga as próprias linhas
+-- Row Level Security: usuários ativos do mesmo espaço veem e editam os dados
+-- compartilhados. Somente a Edge Function administra membros.
+alter table public.workspace_members enable row level security;
+drop policy if exists "workspace_members_select" on public.workspace_members;
+create policy "workspace_members_select" on public.workspace_members
+  for select to authenticated
+  using (
+    user_id = (select auth.uid())
+    or owner_id = (select public.current_workspace_owner_id())
+  );
+revoke all on table public.workspace_members from public, anon, authenticated;
+grant select on table public.workspace_members to authenticated;
+grant all on table public.workspace_members to service_role;
+
+-- Permite encerrar a sessão do colaborador quando o proprietário revoga o acesso.
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (
+       select 1 from pg_publication_tables
+       where pubname = 'supabase_realtime'
+         and schemaname = 'public'
+         and tablename = 'workspace_members'
+     ) then
+    alter publication supabase_realtime add table public.workspace_members;
+  end if;
+end $$;
+
 do $$
 declare t text;
 begin
@@ -177,7 +296,7 @@ begin
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "dono" on public.%I', t);
     execute format(
-      'create policy "dono" on public.%I for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid())',
+      'create policy "dono" on public.%I for all to authenticated using (user_id = (select public.current_workspace_owner_id())) with check (user_id = (select public.current_workspace_owner_id()))',
       t
     );
   end loop;
@@ -197,16 +316,22 @@ security invoker
 as $$
 declare
   v_num int;
+  v_owner_id uuid;
 begin
+  v_owner_id := public.current_workspace_owner_id();
+  if v_owner_id is null then
+    raise exception 'usuário não está vinculado a uma gráfica ativa';
+  end if;
+
   if p_tipo = 'orcamento' then
     insert into public.empresa (user_id, proximo_num_orcamento)
-      values (auth.uid(), 2)
+      values (v_owner_id, 2)
       on conflict (user_id) do update
         set proximo_num_orcamento = public.empresa.proximo_num_orcamento + 1
       returning proximo_num_orcamento - 1 into v_num;
   elsif p_tipo = 'fatura' then
     insert into public.empresa (user_id, proximo_num_fatura)
-      values (auth.uid(), 2)
+      values (v_owner_id, 2)
       on conflict (user_id) do update
         set proximo_num_fatura = public.empresa.proximo_num_fatura + 1
       returning proximo_num_fatura - 1 into v_num;
