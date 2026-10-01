@@ -46,7 +46,7 @@ export default function Layout() {
           </h1>
           <p className="mt-0.5 text-xs text-slate-400">Gestão para gráficas</p>
         </div>
-        <nav className="mt-2 flex flex-col gap-0.5 px-3">
+        <nav className="mt-2 flex max-h-[calc(100vh-11rem)] flex-col gap-0.5 overflow-y-auto px-3 pb-4">
           {NAV.filter((item) => item.to !== '/equipe' || (cloudMode && session)).map((item) => (
             <NavLink
               key={item.to}
