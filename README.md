@@ -1,96 +1,59 @@
-# Gráfica Livre (fork interno)
+# Gráfica Livre — gestão de gráfica
 
-Sistema de gestão **gratuito e open source** para gráficas rápidas e comunicação visual:
-orçamentos, faturas, produção, financeiro e relatórios — tudo em português, num app só.
+Sistema de gestão comercial e operacional para gráficas rápidas e empresas de comunicação visual. Reúne em um só lugar o cadastro de produtos e clientes, a criação de orçamentos, as vendas de balcão, o acompanhamento da produção e o controle financeiro. O código deste repositório se chama Gráfica Livre; algumas telas e o assistente ainda exibem a marca GraficaUp Studio.
 
-> Fork operacional da conta **rockbca-dotcom**, a partir de [0brunox/grafica-livre](https://github.com/0brunox/grafica-livre) (MIT).
-> Guia da equipe: **[COMO-USAR.md](COMO-USAR.md)**
+## Para quem é
 
-![Dashboard](src/assets/screens/dashboard.webp)
+Para equipes que precisam sair de anotações e planilhas dispersas e acompanhar o atendimento desde o pedido do cliente até a entrega do material.
 
-## Recursos
+## O que o sistema oferece hoje
 
-- **Orçamentos** com cálculo automático de R$/m², PDF com a sua marca e envio por WhatsApp
-- **Faturas** convertidas do orçamento em um clique, com PIX (QR code), pagamentos parciais e guia de remessa para o entregador
-- **Produção em kanban**: arte → impressão → acabamento → pronto → entregue, com alerta de prazo
-- **Financeiro**: contas a pagar e a receber, fluxo de vencimentos
-- **Relatórios**: indicadores do mês e gráficos de recebimentos × despesas
-- **Backup**: exporte e importe todos os dados em JSON
+- **Produtos e clientes:** catálogo, preços e dados de contato centralizados.
+- **Orçamentos:** montagem de itens, cálculo de valores, geração de PDF e compartilhamento.
+- **Faturas:** conversão de orçamento, registro de pagamentos, PIX e documentos para o cliente.
+- **PDV — venda rápida:** registro de vendas de balcão sem abrir orçamento ou iniciar produção.
+- **Produção:** quadro de etapas para acompanhar cada trabalho até a entrega.
+- **Financeiro e relatórios:** contas a pagar, contas a receber e visão de resultados.
+- **Equipe:** contas de proprietário e colaboradores que trabalham nos mesmos dados da gráfica.
+- **Assistente opcional:** consultas e propostas de cadastro/lançamento no modo Supabase, com envio de mensagens e resultados consultados ao provedor de IA configurado.
 
-> Todos os valores monetários são armazenados em **centavos** (inteiros).
+Para entender o que cada tela faz, os dados que guarda e as limitações atuais, consulte [ARQUITETURA.md](ARQUITETURA.md). O resultado da revisão de riscos está em [AUDITORIA.md](AUDITORIA.md).
 
-## Começando (modo local — zero configuração)
+## Como funciona
 
-Requer [Node.js](https://nodejs.org) 20+.
+O sistema pode ser usado localmente em um navegador ou conectado ao Supabase para login e dados compartilhados entre dispositivos. O modo local não identifica pessoas nem separa permissões. No modo conectado, a conta `owner` representa o proprietário/administrador; a conta `member` representa um colaborador. Hoje ambos os papéis conseguem acessar e editar os dados compartilhados, inclusive o financeiro. A restrição pedida pelo cliente ainda não foi entregue.
 
-```bash
-git clone https://github.com/rockbca-dotcom/grafica-livre.git
-cd grafica-livre
-npm install
-npm run dev
-```
+## Evolução solicitada pelo cliente
 
-No Windows você pode dar dois cliques em `start.bat`.
-No Linux/macOS: `chmod +x start.sh && ./start.sh`.
+A conversa de 14/10/2026 trouxe dois pedidos para a próxima atualização:
 
-Abra http://localhost:5173 — o app roda em **modo local**, guardando os dados no
-localStorage do navegador. Ideal para testar ou para uso individual num único computador.
+1. Restringir a área financeira ao proprietário/administrador.
+2. Destacar no PDV, como favoritos, os produtos mais vendidos e localizar os demais pela busca.
 
-### Não tem prática com terminal? Use um assistente de IA
+Essas mudanças ainda **não estão implementadas**. O escopo exato da restrição financeira e o comportamento inicial dos favoritos estão registrados como decisões a validar no [PRD](PRD.md). Consulte o [ROADMAP](ROADMAP.md) para a sequência de execução.
 
-Se você tem o [Claude Code](https://claude.com/claude-code) ou o
-[Codex](https://openai.com/codex) instalado, não precisa digitar nenhum
-comando. Abra o assistente numa pasta vazia e cole isto:
+## Documentação do projeto
 
-> Instale e rode o sistema do repositório https://github.com/rockbca-dotcom/grafica-livre.
-> Clone o projeto, instale as dependências e suba o servidor de desenvolvimento.
-> Se eu ainda não tiver o Node.js 20 ou superior, instale antes. Quando estiver
-> no ar, me diga o endereço para abrir no navegador.
+| Documento | Para que serve |
+|---|---|
+| [PRD.md](PRD.md) | Regras atuais do produto, solicitações, requisitos, decisões e aceite |
+| [ROADMAP.md](ROADMAP.md) | Apenas as solicitações do cliente e a sequência para entregá-las |
+| [FLUXOGRAMA.md](FLUXOGRAMA.md) | Fluxos atuais e fluxo futuro solicitado, com os estados bem separados |
+| [ARQUITETURA.md](ARQUITETURA.md) | Mapa das telas, dados, integrações e componentes do sistema |
+| [AUDITORIA.md](AUDITORIA.md) | Achados de segurança/qualidade e validações executadas |
+| [AGENTS.md](AGENTS.md) | Regras para quem for alterar o código e o repositório |
+| [ACESSOS.md](ACESSOS.md) | Inventário seguro de contas e locais onde credenciais devem ficar |
+| [COMO-USAR.md](COMO-USAR.md) | Instalação e guia operacional das telas |
+| [DEPLOY.md](DEPLOY.md) | Publicação e configuração do frontend, Supabase e funções |
 
-## Modo nuvem (Supabase — gratuito)
+## Começar e publicar
 
-Para acessar de vários dispositivos, com login e dados no banco:
-
-1. Crie um projeto gratuito no [Supabase](https://supabase.com).
-2. No **SQL Editor** do projeto, cole e execute o conteúdo de [`supabase/schema.sql`](supabase/schema.sql).
-3. Em **Authentication → Users**, crie seu usuário (e-mail/senha).
-4. **Desligue o cadastro aberto** em **Authentication → Sign In / Providers → Email**,
-   na opção *"Allow new users to sign up"*.
-5. Copie `.env.example` para `.env` e preencha com os valores de **Settings → API**:
-
-   ```
-   VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
-   VITE_SUPABASE_ANON_KEY=SUA-CHAVE-ANON
-   ```
-
-6. `npm run dev` — agora o app abre com landing page + login.
-
-Os dados de cada usuário são isolados por Row Level Security.
-
-## E-mail de faturas (opcional)
-
-O botão "E-mail" das faturas envia o PDF por e-mail usando uma Edge Function do Supabase
-com a API do [Resend](https://resend.com) (tem plano gratuito). Se você não configurar,
-tudo funciona normalmente — use WhatsApp ou baixe o PDF.
-
-```bash
-supabase functions deploy enviar-email
-supabase secrets set RESEND_API_KEY=re_xxx EMAIL_REMETENTE="Sua Gráfica <contato@seudominio.com>"
-```
-
-## Deploy
-
-O build é 100% estático (`npm run build` → pasta `dist/`), com roteamento por hash —
-funciona em qualquer host estático:
-
-- **Vercel**: importe o repositório, framework "Vite", e configure as duas variáveis `VITE_*`.
-- **GitHub Pages**: adicione `base: '/grafica-livre/'` no `vite.config.ts` e publique a `dist/`.
+O guia para instalar e operar está em [COMO-USAR.md](COMO-USAR.md). Os passos para publicar e conectar Supabase e Vercel estão em [DEPLOY.md](DEPLOY.md). Para não especialistas, comece por “Como usar” e leia a seção “Resumo para decisão” da auditoria.
 
 ## Stack
 
-React 19 · TypeScript · Vite · Tailwind CSS 4 · Supabase (opcional) · pdfmake · Recharts
+React, TypeScript, Vite, Tailwind CSS e Supabase opcional. Os valores monetários são guardados em centavos inteiros. A lista de dependências vulneráveis e as validações atuais estão registradas em [AUDITORIA.md](AUDITORIA.md).
 
 ## Licença
 
-[MIT](LICENSE) © 2026 Bruno Santos (projeto original).
-Este fork mantém a mesma licença.
+[MIT](LICENSE). Este repositório é um fork interno do projeto Gráfica Livre.

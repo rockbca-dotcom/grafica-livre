@@ -1,10 +1,12 @@
 # Publicar o sistema online
 
+Documentos relacionados: [arquitetura](ARQUITETURA.md) · [auditoria](AUDITORIA.md) · [PRD e regras de acesso](PRD.md) · [ROADMAP](ROADMAP.md) · [inventário seguro de acessos](ACESSOS.md) · [guia de uso](COMO-USAR.md).
+
 Se você só fizer o deploy do site **sem banco**, cada navegador continua com dados diferentes.
 Para a equipe usar de qualquer computador, são duas peças:
 
-1. **Supabase** — login + banco (gratuito)
-2. **Vercel** — site público (gratuito)
+1. **Supabase** — login, banco e funções de servidor
+2. **Vercel** — publicação do site
 
 Tempo estimado: 20–30 minutos.
 
@@ -17,7 +19,7 @@ Tempo estimado: 20–30 minutos.
    - Region: a mais próxima da América do Sul (ex.: São Paulo, se aparecer)
 3. Espere o projeto ficar `Ready`.
 4. Menu **SQL Editor** → **New query**.
-5. Abra o arquivo `supabase/schema.sql` deste repositório, cole o conteúdo inteiro e clique em **Run**.
+5. Em uma instalação nova, abra `supabase/schema.sql`, cole o conteúdo inteiro e clique em **Run**. Em um sistema existente, faça backup e aplique as migrações da seção abaixo, uma por vez e em ordem.
 6. Menu **Authentication → Users → Add user → Create new user**.
    - Crie o primeiro usuário, que será o proprietário da gráfica.
    - Marque *Auto Confirm User*.
@@ -66,11 +68,34 @@ Salve.
 
 Todos os colaboradores cadastrados usam o mesmo link e trabalham nos mesmos dados da gráfica. O proprietário pode revogar e reativar acessos na tela **Equipe**. O sistema cria as contas diretamente no Supabase e não depende do envio de convites por e-mail.
 
-### Ativar Equipe em uma instalação existente
+**Limite atual:** colaboradores ainda têm acesso às páginas e aos dados financeiros compartilhados. O bloqueio solicitado por papel está no [ROADMAP](ROADMAP.md) e só deve ser considerado concluído depois de aplicado também no Supabase/RLS. Não use esta versão como se o financeiro já estivesse restrito.
 
-Se o sistema já está em produção, aplique as migrações em `supabase/migrations/` em ordem no **SQL Editor** do projeto antes de publicar o frontend. Elas mantêm os registros existentes no espaço do usuário atual.
+### Migrações em uma instalação existente
 
-Depois publique a Edge Function `gerenciar-colaboradores` com validação JWT ativada. Configure `APP_URL` com a URL publicada do app e `APP_ALLOWED_ORIGINS` com essa URL (separe URLs adicionais por vírgula). A função usa as variáveis padrão `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` do ambiente Supabase; a chave privilegiada não deve ser copiada para a Vercel nem para o navegador.
+Se o sistema já está em produção, faça um backup externo e aplique os arquivos em `supabase/migrations/` em ordem temporal no **SQL Editor** do projeto antes de publicar o frontend. Os arquivos atuais são `20261001212303_multiusuarios.sql`, `20261001213922_proximo_numero_search_path.sql` e `20261001222753_cadastro_manual_colaboradores.sql`. Execute um por vez, confira o resultado e não repita um arquivo que terminou com erro sem antes conferir o estado do banco.
+
+### Funções de servidor
+
+Publique apenas as funções que a empresa utilizar. Mantenha validação de JWT no gateway Supabase e segredos apenas no ambiente da função.
+
+| Função | Para que serve | Configuração |
+|---|---|---|
+| `gerenciar-colaboradores` | Criar, revogar ou reativar acesso pela tela Equipe. | `APP_URL` deve apontar para o site publicado. `APP_ALLOWED_ORIGINS` recebe domínios permitidos separados por vírgula. O Supabase injeta `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY`; a chave de serviço nunca vai para Vercel ou navegador. |
+| `enviar-email` | Mandar orçamento/fatura em PDF por e-mail. | Secret `RESEND_API_KEY`; opcional `EMAIL_REMETENTE`. O remetente precisa ser autorizado/verificado no Resend para entregar a destinatários externos. |
+| `assistente-ia` | Responder perguntas sobre os dados e propor cadastros. | Secret `NVIDIA_API_KEY`. Mensagens e resultados das consultas são enviados à NVIDIA; só ative depois de aprovar isso na política da empresa. |
+
+Os segredos das funções não devem receber prefixo `VITE_`. Sem o secret ou a função correspondente, o recurso opcional não estará disponível.
+
+### Ordem recomendada para atualizar
+
+1. Exporte o JSON do app para uma pasta segura e confirme a cópia de segurança configurada no Supabase.
+2. Leia a versão e aplique as migrações necessárias, uma por vez.
+3. Publique/atualize as Edge Functions usadas e confira os secrets.
+4. Publique o frontend com as variáveis `VITE_*`.
+5. Teste login, cliente, produto, orçamento, PDF, fatura, pagamento e produção. Teste também uma sessão de colaborador.
+6. Registre data e responsável pela publicação sem incluir valores de secrets.
+
+O app faz exportação manual; ele não agenda nem confirma backup automático no Supabase. A importação JSON substitui os dados atuais e tem os riscos descritos em AUD-03 de [AUDITORIA.md](AUDITORIA.md).
 
 ## Domínio próprio (opcional)
 
@@ -83,3 +108,5 @@ Depois atualize a Site URL no Supabase para esse domínio.
 - Não deixe o cadastro público ligado no Supabase.
 - Não use a chave `service_role` no frontend. Só a `anon`.
 - Os dados de teste do seu PC **não sobem sozinhos**. Exporte o JSON no modo local e importe no sistema online, se o app tiver essa opção na tela de configurações/backup.
+- Não prometa bloqueio do financeiro para colaboradores; essa regra ainda não está no código.
+- Não ative o assistente sem aprovar o envio de mensagens e resultados do banco ao serviço externo.

@@ -24,6 +24,9 @@ supabase/functions/.env
 # Configuração local do Claude Code
 .claude/
 
+# Exportação e anexos internos do WhatsApp; podem conter dados pessoais.
+/Conversa do WhatsApp com Sistema Gráfica/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
