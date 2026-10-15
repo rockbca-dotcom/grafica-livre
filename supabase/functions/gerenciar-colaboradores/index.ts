@@ -99,8 +99,8 @@ Deno.serve(async (req: Request) => {
       return response({ ok: true }, 200, origin)
     }
 
-    if (membership.role !== 'owner' || membership.owner_id !== caller.id) {
-      return response({ error: 'Somente o proprietário pode gerenciar colaboradores.' }, 403, origin)
+    if (membership.role !== 'owner') {
+      return response({ error: 'Somente administradores da gráfica podem gerenciar colaboradores.' }, 403, origin)
     }
 
     if (action === 'create') {
