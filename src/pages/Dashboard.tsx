@@ -4,6 +4,7 @@ import {
   Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import { useData } from '../context/DataContext'
+import { useAuth } from '../context/AuthContext'
 import { Card, KpiCard, PageHeader, StatusBadge } from '../components/ui'
 import { formatCents } from '../lib/money'
 import { daysUntil, formatDateBR, monthKey, monthLabel, todayISO } from '../lib/dates'
@@ -13,6 +14,8 @@ const anim = import.meta.env.MODE !== 'capture'
 
 export default function Dashboard() {
   const { db, clienteById, valorPago, faturaStatusEfetivo } = useData()
+  const { cloudMode, role } = useAuth()
+  const isOwner = !cloudMode || role === 'owner'
 
   const mesAtual = monthKey(todayISO())
 
@@ -125,42 +128,46 @@ export default function Dashboard() {
         })}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className={`grid grid-cols-1 gap-4 ${isOwner ? 'sm:grid-cols-2 xl:grid-cols-4' : 'sm:grid-cols-2'}`}>
         <KpiCard
           label="Orçamentos do mês"
           value={String(stats.orcamentosMesQtd)}
-          hint={formatCents(stats.orcamentosMesValor)}
+          {...(isOwner ? { hint: formatCents(stats.orcamentosMesValor) } : {})}
           to="/orcamentos"
         />
-        <KpiCard
-          label="Entradas no mês"
-          value={formatCents(stats.recebidoMes)}
-          tone="good"
-          hint="Faturas + vendas rápidas"
-          to="/relatorios"
-        />
-        <KpiCard
-          label="A receber"
-          value={formatCents(stats.aReceber)}
-          hint={
-            stats.vencidasReceber > 0
-              ? `${formatCents(stats.vencidasReceber)} vencido`
-              : `${stats.faturasAbertasQtd} fatura(s) em aberto`
-          }
-          tone={stats.vencidasReceber > 0 ? 'bad' : 'default'}
-          to="/contas-receber"
-        />
-        <KpiCard
-          label="A pagar"
-          value={formatCents(stats.aPagar)}
-          hint={`Despesas pagas no mês: ${formatCents(stats.pagoMes)}`}
-          tone="warn"
-          to="/contas-pagar"
-        />
+        {isOwner && (
+          <>
+            <KpiCard
+              label="Entradas no mês"
+              value={formatCents(stats.recebidoMes)}
+              tone="good"
+              hint="Faturas + vendas rápidas"
+              to="/relatorios"
+            />
+            <KpiCard
+              label="A receber"
+              value={formatCents(stats.aReceber)}
+              hint={
+                stats.vencidasReceber > 0
+                  ? `${formatCents(stats.vencidasReceber)} vencido`
+                  : `${stats.faturasAbertasQtd} fatura(s) em aberto`
+              }
+              tone={stats.vencidasReceber > 0 ? 'bad' : 'default'}
+              to="/contas-receber"
+            />
+            <KpiCard
+              label="A pagar"
+              value={formatCents(stats.aPagar)}
+              hint={`Despesas pagas no mês: ${formatCents(stats.pagoMes)}`}
+              tone="warn"
+              to="/contas-pagar"
+            />
+          </>
+        )}
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
+      <div className={`mt-5 grid grid-cols-1 gap-4 ${isOwner ? 'xl:grid-cols-3' : ''}`}>
+        {isOwner && <Card className="xl:col-span-2">
           <h3 className="mb-3 text-sm font-semibold text-slate-700">
             Recebimentos × Despesas (últimos 6 meses)
           </h3>
@@ -186,9 +193,9 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </Card>}
 
-        <Card>
+        <Card className={isOwner ? '' : 'max-w-3xl'}>
           <h3 className="mb-3 text-sm font-semibold text-slate-700">Funil de orçamentos</h3>
           <div className="flex flex-col gap-3">
             {funil.map((f) => {
@@ -210,37 +217,41 @@ export default function Dashboard() {
             })}
           </div>
 
-          <h3 className="mb-2 mt-6 text-sm font-semibold text-slate-700">Próximos vencimentos</h3>
-          {proximos.length === 0 && (
-            <p className="text-sm text-slate-400">Nada em aberto. 🎉</p>
+          {isOwner && (
+            <>
+              <h3 className="mb-2 mt-6 text-sm font-semibold text-slate-700">Próximos vencimentos</h3>
+              {proximos.length === 0 && (
+                <p className="text-sm text-slate-400">Nada em aberto. 🎉</p>
+              )}
+              <div className="flex flex-col">
+                {proximos.map((p) => {
+                  const dias = daysUntil(p.data)
+                  return (
+                    <div
+                      key={`${p.tipo}-${p.id}`}
+                      className="flex items-center justify-between border-b border-slate-100 py-2 text-sm last:border-0"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate">{p.titulo}</p>
+                        <p className={`text-xs ${dias < 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                          {formatDateBR(p.data)}
+                          {dias < 0 ? ` — ${-dias}d em atraso` : dias === 0 ? ' — hoje' : ''}
+                        </p>
+                      </div>
+                      <span
+                        className={`ml-3 shrink-0 font-semibold ${
+                          p.tipo === 'receber' ? 'text-emerald-600' : 'text-red-500'
+                        }`}
+                      >
+                        {p.tipo === 'receber' ? '+' : '−'}
+                        {formatCents(p.valor)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
-          <div className="flex flex-col">
-            {proximos.map((p) => {
-              const dias = daysUntil(p.data)
-              return (
-                <div
-                  key={`${p.tipo}-${p.id}`}
-                  className="flex items-center justify-between border-b border-slate-100 py-2 text-sm last:border-0"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate">{p.titulo}</p>
-                    <p className={`text-xs ${dias < 0 ? 'text-red-500' : 'text-slate-400'}`}>
-                      {formatDateBR(p.data)}
-                      {dias < 0 ? ` — ${-dias}d em atraso` : dias === 0 ? ' — hoje' : ''}
-                    </p>
-                  </div>
-                  <span
-                    className={`ml-3 shrink-0 font-semibold ${
-                      p.tipo === 'receber' ? 'text-emerald-600' : 'text-red-500'
-                    }`}
-                  >
-                    {p.tipo === 'receber' ? '+' : '−'}
-                    {formatCents(p.valor)}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
         </Card>
       </div>
 
@@ -262,7 +273,7 @@ export default function Dashboard() {
                   <th className="px-3 py-2">Número</th>
                   <th className="px-3 py-2">Cliente</th>
                   <th className="px-3 py-2">Data</th>
-                  <th className="px-3 py-2 text-right">Total</th>
+                  {isOwner && <th className="px-3 py-2 text-right">Total</th>}
                   <th className="px-3 py-2">Status</th>
                 </tr>
               </thead>
@@ -272,7 +283,7 @@ export default function Dashboard() {
                     <td className="px-3 py-2 font-medium">{o.numero}</td>
                     <td className="px-3 py-2">{clienteById(o.clienteId)?.nome ?? '—'}</td>
                     <td className="px-3 py-2">{formatDateBR(o.data)}</td>
-                    <td className="px-3 py-2 text-right font-semibold">{formatCents(o.total)}</td>
+                    {isOwner && <td className="px-3 py-2 text-right font-semibold">{formatCents(o.total)}</td>}
                     <td className="px-3 py-2">
                       <StatusBadge status={o.status} />
                     </td>

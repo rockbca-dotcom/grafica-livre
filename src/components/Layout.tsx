@@ -22,7 +22,7 @@ const NAV = [
 
 export default function Layout() {
   const [open, setOpen] = useState(false)
-  const { cloudMode, session, signOut } = useAuth()
+  const { cloudMode, session, signOut, role } = useAuth()
   const { db, loading } = useData()
 
   return (
@@ -47,7 +47,11 @@ export default function Layout() {
           <p className="mt-0.5 text-xs text-slate-400">Gestão para gráficas</p>
         </div>
         <nav className="mt-2 flex max-h-[calc(100vh-11rem)] flex-col gap-0.5 overflow-y-auto px-3 pb-4">
-          {NAV.filter((item) => item.to !== '/equipe' || (cloudMode && session)).map((item) => (
+          {NAV.filter((item) => {
+            if (item.to === '/equipe') return cloudMode && session
+            const financial = ['/contas-receber', '/contas-pagar', '/relatorios'].includes(item.to)
+            return !financial || !cloudMode || role === 'owner'
+          }).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

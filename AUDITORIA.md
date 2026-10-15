@@ -1,26 +1,26 @@
 # Auditoria do sistema
 
-**Data:** 14/10/2026
-**Escopo:** leitura estática do código, esquema e funções Supabase; execução de lint/build; verificação de dependências via `npm audit`.
-**Limite:** não houve acesso às contas de produção, ao projeto Supabase/Vercel ativo, nem dados de clientes. Não foi feito teste invasivo, teste manual de interface em produção ou alteração de código funcional.
+**Data da revisão inicial:** 14/10/2026. **Atualização do código:** 15/10/2026.
+**Escopo inicial:** leitura estática do código, esquema e funções Supabase; execução de lint/build; verificação de dependências via `npm audit`. **Revisão desta atualização:** leitura das mudanças, `npm run lint`, `npm run build` e reconstrução do container Docker local.
+**Limite:** não houve acesso ao Supabase/Vercel de produção nem dados de clientes. Não foi aplicada migração no banco online nem feito teste manual de interface em produção. O container local não comprova publicação online.
 
 ## Resumo para decisão
 
-1. O pedido mais urgente continua aberto: um colaborador autenticado consegue acessar o financeiro compartilhado dentro da gráfica.
+1. A restrição pedida para colaborador foi implementada no código e tem uma migração pronta; ainda precisa ser aplicada no Supabase online e publicada.
 2. A restauração de backup substitui os dados atuais e não é validada nem transacional no Supabase; uma falha no meio pode deixar dados incompletos.
 3. `npm audit` sinaliza cinco dependências com vulnerabilidades classificadas como altas.
 4. Lint e build funcionaram. O lint apontou 10 avisos; o build apontou um aviso de arquivos JavaScript grandes. Não existe comando/suíte de teste automatizado configurado.
 
 ## Achados priorizados
 
-### AUD-01 — Colaborador tem acesso aos dados financeiros
+### AUD-01 — Restrição financeira por papel precisa ser aplicada no ambiente online
 
-**Prioridade:** P1 — corrigir antes de apresentar a restrição solicitada como entregue.
-**Impacto:** a conta `member` pode abrir Contas a Receber, Contas a Pagar e Relatórios, além de ver indicadores no Dashboard, no PDV, em Faturas e no assistente. Pode ler e escrever os dados compartilhados conforme as operações disponíveis.
+**Prioridade:** P1 até a implantação; o código local já implementa o escopo confirmado.
+**Impacto atual do código:** `member` não vê nem abre as rotas Contas a Receber, Contas a Pagar e Relatórios; Dashboard/PDV ocultam indicadores e histórico de vendas; resumo consolidado do assistente é restrito. RLS restringe `contas_pagar` e a leitura de `vendas_rapidas` a `owner`, mas permite que `member` insira uma venda. Faturas, valores e pagamentos permanecem acessíveis conforme a escolha do cliente.
 
-**Evidência:** `src/App.tsx` registra essas rotas sem verificação de papel; `src/components/Layout.tsx` filtra apenas a página Equipe, não as financeiras; `AuthContext` não carrega o papel; `DataContext` carrega todas as coleções; `supabase/schema.sql` usa a mesma política RLS de espaço para todos os membros ativos.
+**Evidência da correção:** papel carregado por `current_workspace_role()`; guardas de rota e menu em `src/App.tsx` e `src/components/Layout.tsx`; indicadores condicionados em Dashboard/PDV; consultas do assistente limitadas por papel; políticas no esquema e na migração `20261015120000_favoritos_e_acesso_financeiro.sql`.
 
-**Próximo passo recomendado:** fechar com o cliente o que é financeiro; fornecer o papel no estado da sessão; proteger navegação e rotas; e separar o acesso aos dados no Supabase. Ocultar botões não é suficiente. Os critérios estão em [PRD.md](PRD.md) e a sequência no [ROADMAP.md](ROADMAP.md).
+**Próximo passo:** aplicar a migração no banco Supabase existente e publicar o frontend. `Contas a Receber` não tem tabela exclusiva: a rota é bloqueada, mas faturas e pagamentos seguem disponíveis para a tela operacional Faturas, como autorizado pelo cliente. O modo local não separa papéis. Critérios e sequência: [PRD.md](PRD.md) e [ROADMAP.md](ROADMAP.md).
 
 ### AUD-02 — `npm audit` encontrou cinco vulnerabilidades altas
 
@@ -58,21 +58,21 @@ Avisos consultados pelo próprio relatório:
 **Prioridade:** P2 — decisão de privacidade e controle de acesso.
 **Evidência:** `supabase/functions/assistente-ia/index.ts` monta mensagens e resultados de consulta e os envia a `https://integrate.api.nvidia.com/v1/chat/completions`. A função consulta clientes, orçamentos, faturas e vendas com o JWT da pessoa. O código define limite de mensagens e tamanho, mas a documentação da interface não explica que dados saem do Supabase.
 
-**Próximo passo recomendado:** informar isso antes do uso, permitir desligar/configurar o recurso, revisar termos e retenção com o provedor e limitar as ferramentas pelo papel. Não inserir dados pessoais/sigilosos no assistente enquanto a política da empresa não autorizar.
+**Estado em 15/10/2026:** [COMO-USAR.md](COMO-USAR.md) agora informa que mensagens e resultados de consulta são enviados à NVIDIA; as ferramentas de resumo e histórico de venda também são limitadas pelo papel. Continua pendente a revisão de termos e retenção com o provedor e uma decisão de política interna. Não inserir dados pessoais/sigilosos no assistente sem autorização da empresa.
 
 ### AUD-06 — Ações do assistente podem falhar para colaboradores
 
 **Prioridade:** P2 — problema funcional.
-**Evidência:** `executeAction` em `supabase/functions/assistente-ia/index.ts` insere cliente, orçamento e venda rápida sem preencher `user_id`. O esquema do banco usa `auth.uid()` como padrão; a política RLS espera o ID do proprietário do espaço. Para um `member`, o usuário autenticado e o proprietário são IDs diferentes, então a gravação tende a ser rejeitada. O adaptador normal da aplicação define explicitamente o ID do espaço.
+**Evidência anterior:** `executeAction` inseria cliente, orçamento e venda rápida sem preencher `user_id`, embora a RLS espere o proprietário do espaço para usuários `member`.
 
-**Próximo passo recomendado:** gravar com o ID do espaço retornado pela função autorizada e validar ações no fluxo de um proprietário e de um colaborador.
+**Estado em 15/10/2026:** corrigido no código. As ações agora chamam `current_workspace_owner_id()` e informam `user_id` ao gravar cliente, orçamento ou venda rápida. **Validação pendente:** executar uma ação por papel contra o banco Supabase depois de aplicar a migração.
 
 ### AUD-07 — Estado `invited` é tratado como autorizado pela política de dados
 
 **Prioridade:** P2 — revisar semântica de convite antes de usar convites pendentes.
-**Evidência:** `current_workspace_owner_id()` em `supabase/schema.sql` aceita status `active` **e** `invited`; as políticas RLS das tabelas usam essa função. Assim, uma conta autenticada cuja associação ainda está `invited` pode receber o espaço pela função e consultar os dados antes de a situação passar a ativa. O fluxo atual de criação pela tela Equipe cria o colaborador como ativo imediatamente, então o risco depende da existência de registros/fluxos `invited`.
+**Evidência anterior:** `current_workspace_owner_id()` aceitava status `active` e `invited`, permitindo que contas pendentes recebessem o ID do espaço para consultar as políticas RLS.
 
-**Próximo passo recomendado:** permitir acesso aos dados apenas com status `active`; aceitar convite deve primeiro ativar a associação e só depois liberar consultas.
+**Estado em 15/10/2026:** corrigido no novo esquema e na migração. `current_workspace_owner_id()` e `current_workspace_role()` aceitam somente associação ativa. A alteração ainda não foi aplicada ao banco online.
 
 ### AUD-08 — Envio de e-mail autenticado, mas sem limites suficientes no backend
 
@@ -93,18 +93,19 @@ Avisos consultados pelo próprio relatório:
 | Verificação | Resultado |
 |---|---|
 | `npm run lint` | Concluiu com código 0. Emite 10 avisos `react(only-export-components)` em componentes/contexts que também exportam funções auxiliares. |
-| `npm run build` | Concluiu com código 0; TypeScript e Vite produziram o bundle. O Vite avisou sobre chunks maiores que 500 KB; bundle principal minificado de aproximadamente 907 KB e chunk PDF de aproximadamente 1,84 MB. |
+| `npm run build` (14/10 e 15/10) | Concluiu com código 0; TypeScript e Vite produziram o bundle. O Vite avisou sobre chunks maiores que 500 KB; bundle principal minificado de aproximadamente 910 KB e chunk PDF de aproximadamente 1,84 MB. |
 | `npm audit --audit-level=moderate` | Código 1; cinco vulnerabilidades altas acima. |
 | Testes automatizados | Não executados: o projeto não configura framework nem script `test`. |
 | Ambiente de produção | Não validado: sem acesso às contas/projetos Supabase e Vercel. |
+| Docker local | Imagem reconstruída e container `grafica-livre-web` iniciado em 15/10/2026. Isso valida o container local, não o deploy online. |
 
 ## Ordem recomendada de correção
 
-1. Tratar AUD-01 e fechar as decisões de FIN-01 com o cliente.
+1. Aplicar a migração desta atualização e publicar a versão revisada; depois conferir os papéis no ambiente real.
 2. Planejar AUD-02 e atualizar dependências em mudança própria, com revisão do lockfile.
 3. Corrigir AUD-03 antes de orientar restauração de dados de produção.
-4. Corrigir AUD-04 para não prometer recuperação que o app não controla.
-5. Revisar AUD-05 a AUD-08 antes de ampliar o uso de equipe/integrações.
-6. Corrigir AUD-09 como ajuste pequeno de interface.
+4. Corrigir AUD-04 na própria tela para não prometer recuperação que o app não controla.
+5. Concluir a revisão de privacidade de AUD-05 e validar as correções de AUD-06/AUD-07 no Supabase.
+6. Revisar AUD-08 e corrigir AUD-09 como ajuste pequeno de interface.
 
 Os pedidos do cliente continuam organizados em [ROADMAP.md](ROADMAP.md). Os achados desta auditoria não foram adicionados ao roteiro de pedidos para não misturar necessidades do cliente com manutenção técnica.

@@ -68,11 +68,11 @@ Salve.
 
 Todos os colaboradores cadastrados usam o mesmo link e trabalham nos mesmos dados da gráfica. O proprietário pode revogar e reativar acessos na tela **Equipe**. O sistema cria as contas diretamente no Supabase e não depende do envio de convites por e-mail.
 
-**Limite atual:** colaboradores ainda têm acesso às páginas e aos dados financeiros compartilhados. O bloqueio solicitado por papel está no [ROADMAP](ROADMAP.md) e só deve ser considerado concluído depois de aplicado também no Supabase/RLS. Não use esta versão como se o financeiro já estivesse restrito.
+O código da atualização restringe as telas financeiras a `owner`, protege a tabela `contas_pagar` com RLS e salva favoritos compartilhados. Em ambiente existente, aplique a nova migração no banco e publique a versão atual do frontend antes de considerar essas regras ativas online. Colaboradores continuam usando faturas, valores e pagamentos na tela Faturas.
 
 ### Migrações em uma instalação existente
 
-Se o sistema já está em produção, faça um backup externo e aplique os arquivos em `supabase/migrations/` em ordem temporal no **SQL Editor** do projeto antes de publicar o frontend. Os arquivos atuais são `20261001212303_multiusuarios.sql`, `20261001213922_proximo_numero_search_path.sql` e `20261001222753_cadastro_manual_colaboradores.sql`. Execute um por vez, confira o resultado e não repita um arquivo que terminou com erro sem antes conferir o estado do banco.
+Se o sistema já está em produção, faça um backup externo e aplique os arquivos ainda não executados em `supabase/migrations/` em ordem temporal no **SQL Editor** antes de publicar o frontend. O histórico deste repositório inclui `20261001212303_multiusuarios.sql`, `20261001213922_proximo_numero_search_path.sql`, `20261001222753_cadastro_manual_colaboradores.sql` e `20261015120000_favoritos_e_acesso_financeiro.sql`. A última migração adiciona `itens.favorito`, expõe o papel ativo da sessão e restringe `contas_pagar` ao proprietário. Execute apenas migrações ainda não aplicadas, uma por vez, confira o resultado e não repita um arquivo que terminou com erro sem antes conferir o estado do banco.
 
 ### Funções de servidor
 
@@ -82,7 +82,7 @@ Publique apenas as funções que a empresa utilizar. Mantenha validação de JWT
 |---|---|---|
 | `gerenciar-colaboradores` | Criar, revogar ou reativar acesso pela tela Equipe. | `APP_URL` deve apontar para o site publicado. `APP_ALLOWED_ORIGINS` recebe domínios permitidos separados por vírgula. O Supabase injeta `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY`; a chave de serviço nunca vai para Vercel ou navegador. |
 | `enviar-email` | Mandar orçamento/fatura em PDF por e-mail. | Secret `RESEND_API_KEY`; opcional `EMAIL_REMETENTE`. O remetente precisa ser autorizado/verificado no Resend para entregar a destinatários externos. |
-| `assistente-ia` | Responder perguntas sobre os dados e propor cadastros. | Secret `NVIDIA_API_KEY`. Mensagens e resultados das consultas são enviados à NVIDIA; só ative depois de aprovar isso na política da empresa. |
+| `assistente-ia` | Responder perguntas sobre os dados e propor cadastros; resumos financeiros e histórico de vendas rápidas ficam restritos ao proprietário. | Secret `NVIDIA_API_KEY`. Mensagens e resultados das consultas são enviados à NVIDIA; só ative depois de aprovar isso na política da empresa. |
 
 Os segredos das funções não devem receber prefixo `VITE_`. Sem o secret ou a função correspondente, o recurso opcional não estará disponível.
 
@@ -108,5 +108,5 @@ Depois atualize a Site URL no Supabase para esse domínio.
 - Não deixe o cadastro público ligado no Supabase.
 - Não use a chave `service_role` no frontend. Só a `anon`.
 - Os dados de teste do seu PC **não sobem sozinhos**. Exporte o JSON no modo local e importe no sistema online, se o app tiver essa opção na tela de configurações/backup.
-- Não prometa bloqueio do financeiro para colaboradores; essa regra ainda não está no código.
+- Não considere a restrição financeira ativa na nuvem antes de aplicar a migração e publicar o frontend desta versão.
 - Não ative o assistente sem aprovar o envio de mensagens e resultados do banco ao serviço externo.

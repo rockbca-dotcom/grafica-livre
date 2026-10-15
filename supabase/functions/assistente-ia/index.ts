@@ -5,6 +5,7 @@ const MODEL = 'z-ai/glm-5.3'
 const MAX_MESSAGES = 24
 const MAX_MESSAGE_LENGTH = 8_000
 const MAX_TOOL_ROUNDS = 3
+const OWNER_ONLY_TOOLS = new Set(['resumo_operacional', 'listar_vendas_rapidas'])
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -247,7 +248,12 @@ async function executeTool(
   supabase: ReturnType<typeof createClient>,
   name: string,
   rawArguments: string,
+  isOwner: boolean,
 ) {
+  if (!isOwner && OWNER_ONLY_TOOLS.has(name)) {
+    return { erro: 'Este resumo está disponível somente para o proprietário da gráfica.' }
+  }
+
   let args: Record<string, unknown>
   try {
     args = asObject(JSON.parse(rawArguments || '{}'))
@@ -420,12 +426,17 @@ async function executeAction(
   args: Record<string, unknown>,
 ) {
   if (!ACTION_NAMES.has(name)) throw new Error('Ação não autorizada.')
+  const { data: workspaceOwnerId, error: ownerError } = await supabase.rpc('current_workspace_owner_id')
+  if (ownerError || typeof workspaceOwnerId !== 'string') {
+    throw ownerError ?? new Error('Não foi possível identificar a gráfica atual.')
+  }
 
   if (name === 'criar_cliente') {
     const nome = asText(args.nome)
     if (!nome) throw new Error('Informe o nome do cliente.')
     const row = {
       id: crypto.randomUUID(),
+      user_id: workspaceOwnerId,
       nome,
       documento: asText(args.documento),
       email: asText(args.email),
@@ -471,6 +482,7 @@ async function executeAction(
     const total = Math.max(0, normalized.total + frete - desconto)
     const { error } = await supabase.from('orcamentos').insert({
       id: crypto.randomUUID(),
+      user_id: workspaceOwnerId,
       numero: `${asText(empresa?.prefixo_orcamento) || 'ORC-'}${sequence}`,
       cliente_id: clienteId,
       data: actionDate(args.data),
@@ -507,6 +519,7 @@ async function executeAction(
   const sufixo = id.replaceAll('-', '').slice(0, 6).toUpperCase()
   const { error } = await supabase.from('vendas_rapidas').insert({
     id,
+    user_id: workspaceOwnerId,
     numero: `PDV-${data.replaceAll('-', '')}-${sufixo}`,
     cliente_id: clienteId || null,
     data,
@@ -538,14 +551,17 @@ Para criar cliente, orçamento ou venda rápida, use a ferramenta de ação some
 O backend pedirá confirmação explícita antes de executar qualquer ação.
 Nunca diga que uma ação foi concluída antes de receber o resultado da execução.`
 
-async function chamarNvidia(messages: ModelMessage[], apiKey: string) {
+async function chamarNvidia(messages: ModelMessage[], apiKey: string, isOwner: boolean) {
+  const ferramentasConsulta = isOwner
+    ? TOOL_DEFINITIONS
+    : TOOL_DEFINITIONS.filter((tool) => !OWNER_ONLY_TOOLS.has(tool.function.name))
   const response = await fetch(NVIDIA_URL, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
       messages,
-      tools: [...TOOL_DEFINITIONS, ...ACTION_TOOL_DEFINITIONS],
+      tools: [...ferramentasConsulta, ...ACTION_TOOL_DEFINITIONS],
       tool_choice: 'auto',
       temperature: 0.3,
       top_p: 1,
@@ -581,6 +597,12 @@ Deno.serve(async (req) => {
   )
   const { data: userData, error: userError } = await supabase.auth.getUser()
   if (userError || !userData.user) return json({ erro: 'Não autorizado.' }, 401, req)
+
+  const { data: role, error: roleError } = await supabase.rpc('current_workspace_role')
+  if (roleError || (role !== 'owner' && role !== 'member')) {
+    return json({ erro: 'Acesso ativo à gráfica não encontrado.' }, 403, req)
+  }
+  const isOwner = role === 'owner'
 
   const apiKey = Deno.env.get('NVIDIA_API_KEY')
   if (!apiKey) return json({ erro: 'NVIDIA_API_KEY não configurada no Supabase.' }, 503, req)
@@ -619,13 +641,16 @@ Deno.serve(async (req) => {
   }
 
   const modelMessages: ModelMessage[] = [
-    { role: 'system', content: `${SYSTEM_PROMPT}\nData atual: ${new Date().toISOString().slice(0, 10)}.` },
+    {
+      role: 'system',
+      content: `${SYSTEM_PROMPT}\n${isOwner ? '' : 'Esta sessão é de colaborador. Não forneça indicadores consolidados de recebimentos, vendas rápidas ou despesas; consulte somente informações necessárias à operação e use as ferramentas disponíveis.'}\nData atual: ${new Date().toISOString().slice(0, 10)}.`,
+    },
     ...messages.map((message) => ({ role: message.role, content: message.content })),
   ]
 
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
-      const data = await chamarNvidia(modelMessages, apiKey)
+      const data = await chamarNvidia(modelMessages, apiKey, isOwner)
       const choices = Array.isArray(data.choices) ? data.choices : []
       const message = asObject(asObject(choices[0]).message)
       const toolCalls = Array.isArray(message.tool_calls) ? message.tool_calls as ToolCall[] : []
@@ -655,7 +680,7 @@ Deno.serve(async (req) => {
         tool_calls: toolCalls,
       })
       for (const toolCall of toolCalls) {
-        const result = await executeTool(supabase, toolCall.function.name, toolCall.function.arguments)
+        const result = await executeTool(supabase, toolCall.function.name, toolCall.function.arguments, isOwner)
         modelMessages.push({
           role: 'tool',
           tool_call_id: toolCall.id,

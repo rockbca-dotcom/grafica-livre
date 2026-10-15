@@ -502,7 +502,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
           newDb = result.db
           resumo = result.resumo + ' (convertidos do sistema antigo)'
         } else {
-          newDb = { ...emptyDatabase(), ...parsed }
+          newDb = {
+            ...emptyDatabase(),
+            ...parsed,
+            itens: Array.isArray(parsed.itens)
+              ? parsed.itens.map((item: Item) => ({ ...item, favorito: Boolean(item.favorito) }))
+              : [],
+          }
           resumo = 'backup restaurado'
         }
         await a().replaceAll(newDb)

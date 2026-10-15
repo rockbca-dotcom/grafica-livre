@@ -12,21 +12,34 @@ const MENSAGEM_INICIAL: AssistenteMessage = {
     'Olá! Posso consultar clientes, orçamentos, faturas, vendas rápidas e contas a pagar para ajudar no dia a dia da gráfica.',
 }
 
-const SUGESTOES = [
+const MENSAGEM_INICIAL_COLABORADOR: AssistenteMessage = {
+  role: 'assistant',
+  content: 'Olá! Posso ajudar com clientes, orçamentos e faturas para o atendimento da gráfica.',
+}
+
+const SUGESTOES_OWNER = [
   'Faça um resumo da operação',
   'Quais orçamentos estão pendentes?',
   'Mostre minhas vendas rápidas',
 ]
+const SUGESTOES_COLABORADOR = [
+  'Quais orçamentos estão pendentes?',
+  'Quais faturas estão em aberto?',
+  'Encontre um cliente pelo nome',
+]
 
 export default function AssistenteIA() {
-  const { cloudMode } = useAuth()
+  const { cloudMode, role } = useAuth()
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [pendingAction, setPendingAction] = useState<AssistenteAction | null>(null)
-  const [messages, setMessages] = useState<AssistenteMessage[]>([MENSAGEM_INICIAL])
+  const [messages, setMessages] = useState<AssistenteMessage[]>([
+    role === 'owner' ? MENSAGEM_INICIAL : MENSAGEM_INICIAL_COLABORADOR,
+  ])
+  const sugestoes = role === 'owner' ? SUGESTOES_OWNER : SUGESTOES_COLABORADOR
 
-  if (!cloudMode) return null
+  if (!cloudMode || !role) return null
 
   const enviar = async (texto = input) => {
     const content = texto.trim()
@@ -142,7 +155,7 @@ export default function AssistenteIA() {
 
           {messages.length === 1 && (
             <div className="flex flex-wrap gap-1.5 border-t border-slate-200 bg-white px-3 py-2">
-              {SUGESTOES.map((suggestion) => (
+              {sugestoes.map((suggestion) => (
                 <button
                   key={suggestion}
                   type="button"

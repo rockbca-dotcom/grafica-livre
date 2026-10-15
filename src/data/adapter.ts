@@ -71,8 +71,15 @@ export class LocalAdapter implements DataAdapter {
     const raw = localStorage.getItem(LOCAL_KEY)
     if (raw) {
       try {
-        const parsed = JSON.parse(raw)
-        this.db = { ...emptyDatabase(), ...parsed, empresa: { ...EMPRESA_PADRAO, ...parsed.empresa } }
+        const parsed = JSON.parse(raw) as Partial<Database>
+        this.db = {
+          ...emptyDatabase(),
+          ...parsed,
+          itens: Array.isArray(parsed.itens)
+            ? parsed.itens.map((item) => ({ ...item, favorito: Boolean(item.favorito) }))
+            : [],
+          empresa: { ...EMPRESA_PADRAO, ...parsed.empresa },
+        }
       } catch {
         this.db = emptyDatabase()
       }
@@ -146,6 +153,7 @@ function toRow(collection: CollectionName, r: CollectionRow): Record<string, unk
       return {
         id: i.id, nome: i.nome, categoria: i.categoria,
         preco_m2: i.precoM2, preco_unitario: i.precoUnitario, descricao: i.descricao,
+        favorito: i.favorito ?? false,
       }
     }
     case 'orcamentos': {
@@ -224,6 +232,7 @@ function fromRow(collection: CollectionName, r: Record<string, unknown>): Collec
       return {
         id: s('id'), nome: s('nome'), categoria: s('categoria') as Item['categoria'],
         precoM2: n('preco_m2'), precoUnitario: n('preco_unitario'), descricao: s('descricao'),
+        favorito: r.favorito === true,
       } as Item
     case 'orcamentos':
       return {
@@ -355,9 +364,11 @@ export class SupabaseAdapter implements DataAdapter {
 
   async upsert(collection: CollectionName, row: CollectionRow): Promise<void> {
     const ownerId = await this.getWorkspaceOwnerId()
-    const { error } = await this.client
-      .from(TABLE_BY_COLLECTION[collection])
-      .upsert({ ...toRow(collection, row), user_id: ownerId })
+    const table = this.client.from(TABLE_BY_COLLECTION[collection])
+    const payload = { ...toRow(collection, row), user_id: ownerId }
+    const { error } = collection === 'vendasRapidas'
+      ? await table.insert(payload)
+      : await table.upsert(payload)
     if (error) throw error
   }
 

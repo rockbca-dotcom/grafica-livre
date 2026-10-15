@@ -1,7 +1,7 @@
 # Arquitetura e mapa do sistema
 
-**Revisão:** 14/10/2026
-**Base:** código presente neste repositório. Este documento descreve o que existe hoje; mudanças pedidas pelo cliente estão separadas no [PRD](PRD.md) e no [ROADMAP](ROADMAP.md).
+**Revisão:** 15/10/2026
+**Base:** código presente neste repositório. A migração e a publicação da atualização ainda precisam ser feitas no ambiente online; veja [ROADMAP.md](ROADMAP.md).
 
 ## 1. Resumo em linguagem simples
 
@@ -28,7 +28,7 @@ flowchart LR
 | Aplicação | `src/` | React, TypeScript, Vite e Tailwind CSS. |
 | Rotas | `src/App.tsx` | `HashRouter`; URLs internas aparecem após `/#/`, por exemplo `/#/clientes`. |
 | Navegação | `src/components/Layout.tsx` | Menu das páginas, sessão e estado de carregamento. |
-| Autenticação | `src/context/AuthContext.tsx` | Login, sessão, redefinição de senha e saída. Hoje não carrega o papel `owner`/`member` para as páginas. |
+| Autenticação | `src/context/AuthContext.tsx` | Login, sessão, papel ativo (`owner`/`member`), redefinição de senha e saída. Papel inválido ou associação não ativa não recebe permissão de proprietário. |
 | Estado e regras de dados | `src/context/DataContext.tsx` | Carrega e atualiza clientes, catálogo, documentos, pagamentos, produção e empresa. |
 | Persistência | `src/data/adapter.ts` | Converte o modelo TypeScript para `localStorage` ou tabelas Supabase. |
 | Tipos e dinheiro | `src/types.ts`, `src/lib/money.ts`, `src/lib/documento.ts` | Formatos dos registros e cálculos em centavos inteiros. |
@@ -42,20 +42,20 @@ O ponto de entrada visual é `src/main.tsx`; `src/App.tsx` organiza os provedore
 
 | Módulo | O que faz hoje | Principais registros |
 |---|---|---|
-| Dashboard | Mostra orçamentos do mês, entradas, contas a receber/pagar, gráfico de recebimentos e despesas, funil e próximos vencimentos. Há valores financeiros visíveis. | Orçamentos, pagamentos, vendas rápidas, faturas e contas a pagar. |
+| Dashboard | `owner` vê indicadores, gráfico financeiro, vencimentos e funil. `member` vê contagem/funil e acompanhamento operacional, sem valores financeiros consolidados. | Orçamentos, pagamentos, vendas rápidas, faturas e contas a pagar (RLS owner-only). |
 | Clientes | Cadastro, busca, edição e exclusão de clientes; guarda contato, documento, endereço e observações. | `clientes` |
-| Produtos | Catálogo de produtos/serviços com preço por unidade, preço por m² e descrição. | `itens` |
+| Produtos | Catálogo de produtos/serviços com preço por unidade, preço por m², descrição e estrela para favoritos compartilhados do PDV. | `itens` |
 | Orçamentos | Cria, edita, pesquisa, filtra, duplica, imprime/exporta em PDF, envia por e-mail/WhatsApp e converte em fatura. | `orcamentos` |
 | Faturas | Cria faturas diretamente ou a partir de orçamento; mostra status, PDF, guia, PIX, cobrança WhatsApp, e-mail e pagamentos. | `faturas`, `pagamentos` |
-| PDV | Venda de balcão sem orçamento/fatura; aceita item do catálogo ou item avulso, cliente opcional, forma de pagamento e observação. Mantém vendas recentes. | `vendas_rapidas` |
+| PDV | Venda de balcão sem orçamento/fatura; aceita item do catálogo ou item avulso, cliente opcional, forma de pagamento e observação. Sem busca, mostra favoritos da gráfica; se não houver favoritos, mostra todos. Com busca, pesquisa todos os itens. `member` pode inserir vendas, mas não vê indicadores nem histórico; o carrinho mantém o total para fechar a venda. | `vendas_rapidas`, `itens` |
 | Produção | Quadro Kanban com Arte → Impressão → Acabamento → Pronto → Entregue; cards manuais ou ligados a faturas. | `producao_cards` |
-| Contas a Receber | Lista faturas abertas, vencidas e próximas; registra/remove pagamentos e oferece cobrança por PIX/WhatsApp. | `faturas`, `pagamentos` |
-| Contas a Pagar | Cadastra despesas, fornecedor, categoria, vencimento e valor; marca como paga, edita e exclui. | `contas_pagar` |
-| Relatórios | Abas de Vendas, Fluxo de Caixa e Clientes, com período selecionável e exportação CSV. | Faturas, pagamentos, vendas rápidas, despesas e clientes. |
+| Contas a Receber | Rota disponível apenas para `owner`; lista faturas abertas, vencidas e próximas, registra/remove pagamentos e oferece cobrança. `member` registra pagamento dentro da tela Faturas. | `faturas`, `pagamentos` |
+| Contas a Pagar | Cadastra e quita despesas; rota e linhas do banco disponíveis apenas para `owner` (RLS). | `contas_pagar` |
+| Relatórios | Abas de Vendas, Fluxo de Caixa e Clientes, com período e exportação CSV; acesso de `owner`. | Faturas, pagamentos, vendas rápidas, despesas e clientes. |
 | Perfil da Empresa | Dados que aparecem nos documentos, logo, chave PIX, prefixo e próximos números. Consulta CEP pelo serviço ViaCEP. | `empresa` |
 | Equipe | No modo Supabase, proprietário cadastra, revoga e reativa colaboradores. | `workspace_members`, usuários do Supabase Auth |
 | Configurações | Exporta JSON, importa backup atual ou formato legado e informa o modo de armazenamento. | Todas as coleções |
-| Assistente | Opcional no modo Supabase: consulta dados e propõe criar cliente, orçamento ou venda; a tela pede confirmação antes de enviar a ação. | Consultas RLS; NVIDIA; ações via Edge Function |
+| Assistente | Opcional no modo Supabase: consulta dados e propõe criar cliente, orçamento ou venda; ações exigem confirmação. Para `member`, não habilita resumo financeiro nem listagem do histórico de vendas rápidas; conserva consultas operacionais e de faturas. | Consultas RLS; NVIDIA; ações via Edge Function |
 
 ## 4. Regras atuais dos principais fluxos
 
@@ -70,7 +70,7 @@ O ponto de entrada visual é `src/main.tsx`; `src/App.tsx` organiza os provedore
 
 ### PDV e produção
 
-- O PDV usa preço unitário se ele existir; caso contrário, usa preço por m². Produto sem preço não pode ser acrescentado pelo catálogo. Item avulso exige descrição e valor.
+- O PDV usa preço unitário se ele existir; caso contrário, usa preço por m². Produto sem preço não pode ser acrescentado pelo catálogo. Item avulso exige descrição e valor. Na abertura aparecem os favoritos compartilhados; busca em texto pesquisa o catálogo completo.
 - Uma venda do PDV é registrada em `vendas_rapidas`; por definição, não cria fatura nem card de produção.
 - O cartão de produção guarda cliente, título, etapa, prazo, data de entrega, observação e ordem na coluna.
 - O fluxo de produção não é controle de estoque nem emissão fiscal.
@@ -90,7 +90,7 @@ O ponto de entrada visual é `src/main.tsx`; `src/App.tsx` organiza os provedore
 | Coleção / tabela | Conteúdo | Ligações importantes |
 |---|---|---|
 | `clientes` | Cadastro e contatos. | Orçamentos, faturas, vendas rápidas e produção guardam `clienteId`/`cliente_id`. |
-| `itens` | Produto/serviço e preços atuais. | Orçamento, fatura e venda guardam uma cópia descritiva dos itens para preservar o histórico. |
+| `itens` | Produto/serviço, preços atuais e booleano `favorito` compartilhado. | Orçamento, fatura e venda guardam uma cópia descritiva dos itens para preservar o histórico. |
 | `orcamentos` | Número, cliente, datas, itens, totais, termos e status. | Pode originar uma fatura; a referência é guardada na fatura. |
 | `faturas` | Documento de cobrança e status. | Tem pagamentos separados e pode originar card de produção. |
 | `pagamentos` | Data, valor, forma e observação recebidos. | Cada registro aponta para uma fatura. |
@@ -107,16 +107,17 @@ Os vínculos entre documentos são mantidos pela aplicação; várias colunas de
 | Modo | Como funciona | Limites importantes |
 |---|---|---|
 | Local | Um objeto JSON na chave `graficaLivre` do `localStorage` do navegador. | Não tem login, sincronização, cópia automática da aplicação nem permissão individual. Limpar dados do navegador pode apagar o sistema. |
-| Nuvem | Banco Supabase, acessado pelo cliente web autenticado e protegido por RLS. | Colaboradores ativos hoje compartilham e podem editar todos os dados da gráfica, inclusive os financeiros. O pedido para restringir isso está pendente. |
+| Nuvem | Banco Supabase, acessado pelo cliente autenticado e protegido por RLS. | `owner` vê o financeiro. `member` não abre Contas a Receber, Contas a Pagar ou Relatórios; RLS restringe leitura de `contas_pagar`/`vendas_rapidas` a `owner` e permite inserir venda ao colaborador. Faturas, pagamentos e itens continuam compartilhados para operação e favoritos. |
 
-O adaptador traduz `camelCase` do TypeScript para `snake_case` do banco. Para novas propriedades persistidas, verificar também backups legados e preservar campos antigos ao ler.
+O adaptador traduz `camelCase` do TypeScript para `snake_case` do banco. Favoritos usam `itens.favorito`, são compartilhados entre membros e itens/backs antigos sem o campo são lidos como não favoritos.
 
 ## 7. Autenticação e papéis atuais
 
 - Com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`, o app entra no modo nuvem e pede login. Sem essas variáveis, entra no modo local.
 - O primeiro login pode criar o espaço de proprietário por `ensure_workspace_membership()`; as credenciais de colaboradores são criadas pelo servidor na função `gerenciar-colaboradores`.
 - A criação, revogação e reativação de usuários é validada no backend como operação de `owner`.
-- RLS isola um espaço do outro, mas a política de dados atual não distingue `owner` de `member` dentro da mesma gráfica.
+- `current_workspace_role()` devolve o papel ativo da sessão; `current_workspace_owner_id()` deixa de aceitar associações `invited` ou `revoked`.
+- RLS restringe `contas_pagar` a `owner`. `vendas_rapidas` pode ser inserida por membro, mas o histórico só é lido pelo proprietário. Tabelas `faturas`/`pagamentos` continuam compartilhadas: sustentam a tela Faturas permitida aos membros. Contas a Receber é bloqueada na interface/rota, mas não tem tabela isolada própria.
 - A equipe ainda não pode ser controlada no modo local.
 - O cadastro público do Supabase deve permanecer desligado na instalação orientada pelo [DEPLOY](DEPLOY.md).
 
@@ -139,5 +140,6 @@ Guarde segredos no cofre e no ambiente do provedor. O mapa de nomes e responsáv
 - Não é ERP fiscal e não emite NF-e, NFC-e, SAT ou escrituração.
 - Não há estoque, compras automatizadas, conciliação bancária ou controle de caixa por operador.
 - Não há suíte automatizada de testes configurada.
-- O modo local não deve ser usado para prometer segurança por papel ou compartilhamento.
+- O modo local não separa permissões por papel; favoritos são compartilhados no armazenamento daquele navegador.
+- A aplicação da migração `20261015120000_favoritos_e_acesso_financeiro.sql` no banco online e a publicação do frontend ainda estão pendentes.
 - O estado atual do sistema e os achados de segurança/qualidade estão em [AUDITORIA.md](AUDITORIA.md).

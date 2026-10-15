@@ -39,6 +39,7 @@ export interface Item {
   precoM2: number // centavos
   precoUnitario: number // centavos
   descricao: string
+  favorito: boolean
 }
 
 export interface DocumentoItem {

@@ -111,6 +111,7 @@ export function migrateLegacyBackup(raw: unknown): MigrationResult {
       precoM2: reaisToCents(num(raw.precoM2)),
       precoUnitario: reaisToCents(num(raw.precoUnitario)),
       descricao: str(raw.descricao),
+      favorito: false,
     }
     if (i.nome) db.itens.push(i)
   }

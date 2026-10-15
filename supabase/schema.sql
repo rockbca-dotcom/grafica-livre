@@ -4,7 +4,7 @@
 -- Valores monetários são inteiros em CENTAVOS.
 -- Itens de orçamento/fatura ficam em coluna JSONB (escrita atômica, sem joins).
 -- Registros usam o user_id do dono do espaço da gráfica; colaboradores
--- autorizados compartilham os mesmos dados por meio de workspace_members.
+-- ativos compartilham os dados operacionais. Contas a pagar fica restrita ao owner.
 
 create table if not exists public.clientes (
   id uuid primary key,
@@ -32,7 +32,8 @@ create table if not exists public.itens (
   categoria text not null default 'produto',
   preco_m2 bigint not null default 0,
   preco_unitario bigint not null default 0,
-  descricao text not null default ''
+  descricao text not null default '',
+  favorito boolean not null default false
 );
 
 create table if not exists public.orcamentos (
@@ -238,18 +239,37 @@ as $$
   select wm.owner_id
   from public.workspace_members wm
   where wm.user_id = (select auth.uid())
-    and wm.status in ('active', 'invited')
+    and wm.status = 'active'
   limit 1;
 $$;
 
 revoke all on function public.current_workspace_owner_id() from public, anon;
 grant execute on function public.current_workspace_owner_id() to authenticated;
 
+-- O papel é consultado no servidor, sem expor leitura de outros membros.
+create or replace function public.current_workspace_role()
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select wm.role
+  from public.workspace_members wm
+  where wm.user_id = (select auth.uid())
+    and wm.status = 'active'
+  limit 1;
+$$;
+
+revoke all on function public.current_workspace_role() from public, anon;
+grant execute on function public.current_workspace_role() to authenticated;
+
 -- Migrações incrementais: adicionam colunas novas sem recriar as tabelas.
 -- Seguro rodar várias vezes.
 alter table public.workspace_members add column if not exists full_name text not null default '';
 alter table public.workspace_members add column if not exists birth_date date;
 alter table public.workspace_members add column if not exists job_title text not null default '';
+alter table public.itens add column if not exists favorito boolean not null default false;
 alter table public.clientes add column if not exists numero text not null default '';
 alter table public.clientes add column if not exists complemento text not null default '';
 -- Imposto por documento e desconto
@@ -307,6 +327,41 @@ begin
     );
   end loop;
 end $$;
+
+-- Contas a pagar contém dados de gestão financeira e fica disponível apenas ao owner.
+drop policy if exists "dono" on public.contas_pagar;
+drop policy if exists "contas_pagar_owner_only" on public.contas_pagar;
+create policy "contas_pagar_owner_only" on public.contas_pagar
+  for all to authenticated
+  using (
+    user_id = (select public.current_workspace_owner_id())
+    and (select public.current_workspace_role()) = 'owner'
+  )
+  with check (
+    user_id = (select public.current_workspace_owner_id())
+    and (select public.current_workspace_role()) = 'owner'
+  );
+
+-- Colaboradores podem registrar vendas, mas não consultar nem alterar o histórico financeiro.
+drop policy if exists "dono" on public.vendas_rapidas;
+drop policy if exists "vendas_rapidas_owner_all" on public.vendas_rapidas;
+drop policy if exists "vendas_rapidas_member_insert" on public.vendas_rapidas;
+create policy "vendas_rapidas_owner_all" on public.vendas_rapidas
+  for all to authenticated
+  using (
+    user_id = (select public.current_workspace_owner_id())
+    and (select public.current_workspace_role()) = 'owner'
+  )
+  with check (
+    user_id = (select public.current_workspace_owner_id())
+    and (select public.current_workspace_role()) = 'owner'
+  );
+create policy "vendas_rapidas_member_insert" on public.vendas_rapidas
+  for insert to authenticated
+  with check (
+    user_id = (select public.current_workspace_owner_id())
+    and (select public.current_workspace_role()) = 'member'
+  );
 
 -- Numeração atômica de documentos (evita ORC-/FAT- duplicados)
 -- Antes, o próximo número era lido do cliente, incrementado e regravado

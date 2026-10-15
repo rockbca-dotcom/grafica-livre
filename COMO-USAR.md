@@ -29,7 +29,7 @@ Sem `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`, o sistema usa modo local. El
 Faça nesta ordem:
 
 1. **Perfil da Empresa:** cadastre nome, documento, endereço, telefone, e-mail, PIX e logo. Esses dados podem aparecer nos PDFs.
-2. **Produtos:** cadastre serviços e produtos, preço por unidade e/ou por m², e descrição. Confira qual preço o PDV deve usar: ele escolhe primeiro o preço unitário.
+2. **Produtos:** cadastre serviços e produtos, preço por unidade e/ou por m², e descrição. Marque a estrela dos itens que a equipe vende com frequência. O PDV usa primeiro o preço unitário; sem favoritos, ele mostra o catálogo inteiro.
 3. **Clientes:** cadastre nome, documento e meios de contato.
 4. **Orçamentos:** selecione um cliente, adicione itens, confira imposto, frete, desconto, prazo e termos. Gere o PDF ou compartilhe.
 5. **Faturas:** converta um orçamento aprovado ou crie uma fatura diretamente. Informe vencimento e forma de pagamento.
@@ -41,15 +41,15 @@ Faça nesta ordem:
 
 | Área do menu | Uso prático |
 |---|---|
-| Dashboard | Bater o olho em orçamentos do mês, valores recebidos/a receber/a pagar, vencimentos e orçamentos recentes. |
+| Dashboard | O proprietário vê entradas, saldos, despesas e vencimentos. O colaborador vê o funil e a quantidade de orçamentos, sem indicadores financeiros consolidados. |
 | Orçamentos | Criar/editar, pesquisar, filtrar, duplicar, gerar PDF, enviar e-mail/WhatsApp e converter em fatura. |
 | Faturas | Acompanhar cobrança, gerar PDF/guia, PIX, enviar e-mail/WhatsApp, registrar recebimento e excluir. |
-| PDV — Venda rápida | Registrar venda de balcão sem orçamento. Escolha produtos, quantidades, cliente opcional e pagamento; finalize a venda. |
+| PDV — Venda rápida | Registrar venda sem orçamento. Na abertura, aparecem os favoritos compartilhados; se não houver nenhum, aparecem todos os produtos. A busca procura o catálogo inteiro. Escolha produtos, quantidades e pagamento; o carrinho mostra o total para finalizar a venda. |
 | Produção | Acompanhar e mover serviços por cinco etapas. Cards vinculados à fatura exibem o cliente e os dados do trabalho. |
-| Contas a Receber | Ver saldo em aberto e atraso, registrar/remover pagamentos e preparar cobrança. |
-| Contas a Pagar | Cadastrar despesa e vencimento, marcar paga, editar ou excluir. |
+| Contas a Receber | Proprietário: ver saldos, vencimentos e preparar cobrança. Colaborador: use Faturas para consultar valores e registrar/remover pagamentos. |
+| Contas a Pagar | Proprietário cadastra despesa e vencimento, marca como paga, edita ou exclui. |
 | Clientes / Produtos | Manter os cadastros usados por orçamento, fatura e PDV. |
-| Relatórios | Consultar vendas, fluxo de caixa e resultado por cliente; exportar CSV. |
+| Relatórios | Proprietário consulta vendas, fluxo de caixa e resultado por cliente; exporta CSV. |
 | Perfil da Empresa | Editar os dados usados nos documentos e na cobrança PIX. |
 | Equipe | No modo nuvem, proprietário cria e administra os acessos dos colaboradores. |
 | Configurações | Exportar/importar JSON e verificar se está no modo local ou nuvem. |
@@ -63,7 +63,7 @@ O modo nuvem precisa do Supabase. Há dois papéis no código:
 
 O proprietário cria contas pela tela Equipe. A senha inicial é definida no cadastro e deve ser entregue por canal seguro. A criação exige nome, e-mail, data de nascimento, função e senha. O acesso fica ativo imediatamente. O proprietário também pode revogar ou reativar uma conta.
 
-**Limitação importante:** nesta versão, proprietário e colaborador ainda veem e editam as mesmas páginas e registros financeiros. O pedido para deixar o financeiro somente para o ADM ainda está no [ROADMAP](ROADMAP.md). Não use o sistema atual contando com esse bloqueio. O modo local não tem login nem controle de papel.
+No modo Supabase, apenas `owner` abre Contas a Receber, Contas a Pagar e Relatórios. A tabela de despesas também é restrita no banco. O colaborador mantém acesso a Faturas, valores e pagamentos para executar o atendimento. No modo local, não há login nem controle de papel; quem usa o mesmo navegador vê os mesmos dados.
 
 ## Backup, exportação e restauração
 
@@ -88,5 +88,5 @@ O assistente é opcional. A empresa deve autorizar o uso de serviços externos p
 
 - Não emite nota fiscal e não substitui ERP fiscal.
 - Não controla estoque, compras, conciliação bancária ou caixa separado por operador.
-- Favoritos no PDV ainda não existem; hoje a tela lista todos os itens em ordem alfabética e a pesquisa procura nome/descrição.
-- As contas compartilhadas no Supabase ainda não têm autorização financeira separada por papel.
+- A migração `20261015120000_favoritos_e_acesso_financeiro.sql` precisa ser aplicada ao banco Supabase existente para salvar favoritos compartilhados e restringir Contas a Pagar no servidor.
+- Código no repositório não confirma que o frontend ou o banco online já foram publicados; veja [ROADMAP.md](ROADMAP.md).

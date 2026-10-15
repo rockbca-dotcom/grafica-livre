@@ -1,53 +1,53 @@
 # ROADMAP — pedidos do cliente
 
-**Estado:** planejamento; ainda não há implementação dos pedidos desta conversa.
+**Estado:** escopo confirmado; código implementado e lint/build aprovados. Conferência manual, migração do Supabase e publicação ainda pendentes.
 **Fonte:** conversa exportada do WhatsApp em 14/10/2026.
 **Detalhamento e decisões de negócio:** [PRD.md](PRD.md).
 
 ## Ordem de execução
 
-### Etapa 0 — Confirmar as regras com o cliente
+### Etapa 0 — Confirmar as regras com o cliente — concluída
 
-- [ ] Definir quais páginas, indicadores e valores são “parte financeira”. Ver perguntas FIN-01 no PRD.
-- [ ] Definir se colaboradores podem visualizar preços de faturas e registrar pagamentos.
-- [ ] Confirmar se os favoritos do PDV serão compartilhados pela equipe.
-- [ ] Confirmar que a restrição de acesso será aplicada no modo nuvem; o modo local não identifica usuários.
+- [x] Restringir para `member` Contas a Pagar, Contas a Receber, Relatórios e indicadores financeiros consolidados.
+- [x] Manter faturas, seus valores e pagamentos disponíveis para operação; manter a venda no PDV com total para fechamento.
+- [x] Definir favoritos compartilhados por toda a gráfica.
+- [x] Aplicar papéis no modo Supabase; reconhecer que o modo local não identifica usuários.
 
-**Pronto quando:** respostas registradas no PRD. Não iniciar o bloqueio financeiro até fechar esse limite, pois ele pode afetar atendimento, faturamento e caixa.
+**Decisões registradas:** [PRD.md](PRD.md), seção 8.
 
 ### Etapa 1 — Restringir a área financeira
 
-- [ ] Carregar e disponibilizar o papel `owner`/`member` junto à sessão autenticada.
-- [ ] Ocultar no menu de `member` as páginas financeiras aprovadas.
-- [ ] Bloquear as mesmas rotas para `member`, inclusive ao digitar o endereço diretamente.
-- [ ] Aplicar a regra no Supabase/RLS para que uma chamada direta não contorne a interface.
-- [ ] Ajustar as consultas/carga de dados para que a falta de acesso a dados financeiros não impeça a operação normal do colaborador.
-- [ ] Remover ou controlar os indicadores de valores financeiros conforme o limite aprovado.
-- [ ] Manter o acesso completo do `owner` e o acesso operacional que o cliente aprovou para `member`.
+- [x] Carregar e disponibilizar o papel `owner`/`member` junto à sessão autenticada.
+- [x] Ocultar no menu de `member` as páginas financeiras aprovadas.
+- [x] Bloquear as mesmas rotas para `member`, inclusive ao digitar o endereço diretamente.
+- [x] Aplicar RLS de `owner` à tabela `contas_pagar`.
+- [x] Manter o carregamento operacional para faturas e pagamentos e bloquear Contas a Pagar sem travar os demais dados.
+- [x] Ocultar indicadores financeiros do Dashboard/PDV e limitar resumos financeiros do assistente; manter inserção de vendas rápidas e bloquear a leitura do histórico por RLS.
+- [x] Manter acesso do `owner` e faturas, valores, pagamentos e venda do PDV para `member`.
 
 **Dependência:** Etapa 0.
 **Aceite:** critérios de `FIN-01` em [PRD.md](PRD.md).
 
 ### Etapa 2 — Favoritos no catálogo e no PDV
 
-- [ ] Confirmar favoritos compartilhados ou individuais.
-- [ ] Acrescentar o campo de favorito ao tipo `Item`, ao adaptador local/nuvem e ao esquema/migração do Supabase.
-- [ ] Fazer itens existentes iniciarem sem favorito, sem perder preço, descrição ou histórico.
-- [ ] Permitir marcar/desmarcar favorito na tela Produtos.
-- [ ] Mostrar os favoritos primeiro/no recorte inicial do PDV; se não houver nenhum, mostrar todos.
-- [ ] Fazer a busca do PDV encontrar todo o catálogo, inclusive produtos fora dos favoritos.
-- [ ] Mostrar uma indicação simples para a equipe aprender a favoritar produtos.
+- [x] Usar favoritos compartilhados por toda a gráfica.
+- [x] Acrescentar o campo de favorito ao tipo `Item`, ao adaptador local/nuvem e ao esquema/migração do Supabase.
+- [x] Fazer itens existentes iniciarem sem favorito, sem perder preço, descrição ou histórico.
+- [x] Permitir marcar/desmarcar favorito na tela Produtos.
+- [x] Mostrar somente favoritos na abertura do PDV; se não houver nenhum, mostrar todo o catálogo.
+- [x] Fazer a busca do PDV encontrar todo o catálogo, inclusive produtos fora dos favoritos.
+- [x] Mostrar uma indicação simples para a equipe aprender a favoritar produtos.
 
 **Dependência:** confirmação sobre compartilhamento.
 **Aceite:** critérios de `PDV-01` em [PRD.md](PRD.md).
 
 ### Etapa 3 — Conferir, documentar e publicar
 
+- [x] Executar `npm run lint` e `npm run build`; ambos concluíram com código 0 (avisos registrados em [AUDITORIA.md](AUDITORIA.md)).
 - [ ] Conferir manualmente os cenários de proprietário, colaborador e acesso direto às rotas.
 - [ ] Conferir favoritos no modo local e Supabase, inclusive depois de atualizar a tela.
-- [ ] Conferir que a busca encontra favoritos e não favoritos e que itens antigos continuam íntegros.
-- [ ] Executar os comandos de qualidade documentados no `AGENTS.md` antes da publicação.
-- [ ] Atualizar PRD e README com o que foi realmente entregue.
+- [ ] Conferir a busca com produtos favoritos e não favoritos e a leitura de itens antigos.
+- [x] Atualizar PRD e README com as regras confirmadas e o estado real do trabalho.
 - [ ] Aplicar migração do banco e publicar o frontend na ordem registrada no DEPLOY.md.
 - [ ] Registrar a data e o responsável pela publicação, sem incluir senhas ou chaves.
 
@@ -55,9 +55,9 @@
 
 ```text
 Confirmações do cliente
-        ├──> Permissões financeiras no frontend e no Supabase
-        └──> Campo/edição de favorito + filtro de produtos no PDV
-                         └──> Conferência manual e publicação
+        ├──> Permissões financeiras no frontend, no assistente e no Supabase
+        └──> Favoritos compartilhados no catálogo e no PDV
+                         └──> Validação e publicação pendentes
 ```
 
 ## O que não entra neste roteiro

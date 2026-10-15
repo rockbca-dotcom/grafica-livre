@@ -17,6 +17,7 @@ export function novoItem(): Item {
     precoM2: 0,
     precoUnitario: 0,
     descricao: '',
+    favorito: false,
   }
 }
 
@@ -96,7 +97,7 @@ export default function Itens() {
     <div>
       <PageHeader
         title="Produtos"
-        subtitle="Catálogo de produtos e serviços"
+        subtitle="Catálogo de produtos e serviços. Marque a estrela dos itens que devem aparecer primeiro no PDV da equipe."
         actions={
           <>
             <SearchBox value={search} onChange={setSearch} placeholder="Buscar produto..." />
@@ -136,6 +137,30 @@ export default function Itens() {
               header: 'Categoria',
               sortValue: (i) => i.categoria,
               render: (i) => (i.categoria === 'servico' ? 'Serviço' : 'Produto'),
+            },
+            {
+              key: 'favorito',
+              header: 'PDV',
+              className: 'text-center',
+              render: (i) => (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await saveItem({ ...i, favorito: !i.favorito })
+                      showToast(i.favorito ? 'Removido dos favoritos do PDV.' : 'Adicionado aos favoritos do PDV.')
+                    } catch (err) {
+                      showToast(err instanceof Error ? err.message : String(err), 'error')
+                    }
+                  }}
+                  className={`rounded px-2 py-1 text-xl transition hover:bg-amber-50 ${i.favorito ? 'text-amber-500' : 'text-slate-300 hover:text-amber-500'}`}
+                  aria-label={i.favorito ? `Remover ${i.nome} dos favoritos do PDV` : `Favoritar ${i.nome} no PDV`}
+                  aria-pressed={i.favorito}
+                  title={i.favorito ? 'Favorito do PDV' : 'Adicionar aos favoritos do PDV'}
+                >
+                  {i.favorito ? '★' : '☆'}
+                </button>
+              ),
             },
             {
               key: 'precoM2',

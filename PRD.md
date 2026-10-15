@@ -1,7 +1,7 @@
 # PRD — Gráfica Livre
 
-**Status:** requisitos organizados; o limite financeiro e o compartilhamento de favoritos precisam de confirmação antes da implementação.
-**Data da análise:** 14/10/2026
+**Status:** escopo confirmado em 15/10/2026; código implementado e lint/build aprovados. Conferência manual, migração e publicação online pendentes.
+**Data da análise:** 14/10/2026; decisões confirmadas em 15/10/2026.
 **Fonte principal:** exportação da conversa do WhatsApp “Sistema Gráfica”, incluindo texto, imagens e um vídeo com áudio.
 
 ## 1. Em uma frase
@@ -13,11 +13,11 @@ O Gráfica Livre ajuda uma gráfica a registrar clientes e produtos, vender, or�
 1. Colaboradores não devem ter acesso à parte financeira; o proprietário/administrador deve manter esse acesso.
 2. O catálogo do PDV está crescendo. A equipe precisa encontrar os produtos mais vendidos rapidamente sem perder a possibilidade de localizar o restante.
 
-## 3. O que existe hoje
+## 3. Comportamento anterior à atualização
 
 - O app tem papéis de nuvem `owner` e `member`. O primeiro é o proprietário do espaço; o segundo é colaborador.
-- As rotas de contas a pagar, contas a receber e relatórios aparecem na navegação e não têm bloqueio por papel.
-- As políticas RLS atuais compartilham os registros do espaço com seus membros ativos. A separação por papel ainda não é aplicada aos dados financeiros.
+- As rotas de contas a pagar, contas a receber e relatórios apareciam na navegação sem bloqueio por papel.
+- As políticas RLS anteriores compartilhavam todos os registros do espaço com membros ativos.
 - O PDV lista todos os itens em ordem alfabética. A busca existente procura pelo nome e pela descrição.
 - O cadastro do item não tem um campo de favorito.
 - No modo local, os dados ficam no navegador e não há identidade por pessoa; portanto, não é possível separar proprietário e colaborador.
@@ -38,7 +38,7 @@ Esta seção registra o comportamento existente para que uma atualização não 
 | Produção | Cards caminham por Arte → Impressão → Acabamento → Pronto → Entregue. A tela também pode criar cards manualmente. |
 | Contas a pagar | Cada despesa tem descrição, categoria, fornecedor, vencimento, valor e status pendente/paga. Não há controle de parcelas nesta versão. |
 | Exclusão de cliente | Excluir cliente não apaga orçamentos ou faturas associados; o documento histórico permanece. |
-| Nuvem | Os registros são compartilhados no espaço da gráfica. RLS separa espaços diferentes, mas hoje não separa permissões por `owner`/`member` dentro do mesmo espaço. |
+| Nuvem | Os registros operacionais são compartilhados no espaço da gráfica. RLS separa espaços diferentes; esta atualização acrescenta distinção para Contas a Pagar e telas de gestão financeira. |
 
 O inventário de módulos, entidades e integrações está em [ARQUITETURA.md](ARQUITETURA.md). Problemas verificados no código estão em [AUDITORIA.md](AUDITORIA.md).
 
@@ -67,70 +67,76 @@ Não há um papel `admin` separado no código atual. Esta atualização deve usa
 
 **Prioridade:** P0
 **Origem:** mensagem explícita do cliente.
-**Regra:** a área financeira deve ficar disponível somente para `owner`.
+**Regra confirmada pelo cliente:** restringir gestão e indicadores financeiros a `owner`, mantendo faturas, valores de faturas e operações de pagamento disponíveis para o trabalho diário de `member`.
 
 **Aceite mínimo:**
 
-- O `member` não vê na navegação os módulos financeiros definidos no escopo aprovado.
-- Digitar diretamente uma URL financeira não permite abrir os dados ou executar operações sem autorização.
-- O servidor/banco rejeita acesso não autorizado aos dados financeiros; esconder os links não basta.
+- O `member` não vê no menu nem acessa diretamente `Contas a Receber`, `Contas a Pagar` e `Relatórios`.
+- O Dashboard não mostra ao `member` entradas, saldos, despesas nem próximos vencimentos com valores; o PDV não mostra indicadores ou histórico de vendas rápidas. O carrinho e o registro de venda continuam disponíveis.
+- A tabela `contas_pagar` só pode ser lida ou alterada por `owner` via RLS.
+- A tabela `vendas_rapidas` só pode ser consultada/alterada por `owner`; `member` pode inserir vendas para continuar operando o PDV.
+- A tela Faturas continua disponível para `member`, incluindo valores, status e registrar/remover pagamentos.
+- O `member` continua podendo registrar venda no PDV e ver o total do carrinho para concluir a operação.
+- O assistente não fornece resumo consolidado financeiro nem histórico de vendas rápidas a `member`; consultas de faturas para operação permanecem disponíveis.
+- O `owner` continua usando os módulos financeiros normalmente.
+- Clientes, produtos, orçamentos, faturas e produção continuam operacionais para colaboradores.
 - O `owner` continua usando os módulos financeiros normalmente.
 - Clientes, produtos, orçamentos, produção e demais operações aprovadas para colaboradores continuam funcionando.
 
-**Escopo mínimo recomendado, sujeito a confirmação:** restringir `Contas a Receber`, `Contas a Pagar` e `Relatórios`; revisar também valores e indicadores financeiros no Dashboard e no PDV. Manter orçamentos e faturas operacionais para que a equipe possa atender e registrar pedidos.
+**Limite técnico importante:** `Contas a Receber` e Faturas usam as mesmas tabelas de `faturas` e `pagamentos`. Como o cliente autorizou valores e pagamentos na operação de faturas, a restrição dessa tela é aplicada na navegação e na rota; esses registros seguem acessíveis pela API para a tela Faturas. `contas_pagar` e a leitura do histórico de `vendas_rapidas` ficam restritas por RLS; o colaborador ainda pode inserir novas vendas rápidas.
 
 ### PDV-01 — Favoritar produtos de venda frequente
 
 **Prioridade:** P1
 **Origem:** fala no vídeo do PDV.
-**Regra proposta:** permitir marcar/desmarcar um produto como favorito e usar essa seleção para dar acesso rápido aos itens mais vendidos.
+**Regra confirmada:** permitir marcar/desmarcar favoritos compartilhados por toda a gráfica e usar essa seleção para dar acesso rápido aos itens mais vendidos.
 
 **Aceite proposto:**
 
 - O catálogo de produtos permite marcar e desmarcar favoritos.
-- Com favoritos configurados, a tela inicial do PDV destaca somente esses itens.
+- Com favoritos configurados, a tela inicial do PDV mostra somente esses itens.
 - A busca continua encontrando qualquer produto do catálogo, favorito ou não.
 - Se ainda não houver nenhum favorito, o PDV continua mostrando todos os itens, para não deixar a venda sem catálogo na primeira utilização.
-- Favoritos permanecem salvos depois de atualizar a página e em todos os dispositivos no modo nuvem.
+- Favoritos são compartilhados por todos os membros da gráfica, permanecem salvos após atualizar a página e sincronizam entre dispositivos no modo nuvem.
 - Preços, descrições, orçamentos e demais dados dos produtos não são apagados nem alterados por favoritar.
 
-**Implementação provável:** novo campo persistido no produto; compatibilidade com itens antigos; edição no catálogo; filtro de apresentação no PDV. Confirmar se favoritos são compartilhados por toda a gráfica (recomendado) ou individuais por colaborador.
+**Implementação:** campo booleano persistido no produto; itens antigos começam desmarcados; estrela de marcação no catálogo; filtro inicial do PDV com busca sobre o catálogo inteiro.
 
-## 7. Fora do escopo até confirmação
+## 7. Fora do escopo desta atualização
 
-- Bloquear a visualização de preços em orçamentos ou faturas.
-- Proibir um colaborador de registrar pagamentos ou vendas no PDV.
-- Ocultar valores unitários do catálogo.
+- Bloquear valores, status e operações de pagamento dentro da tela Faturas.
+- Proibir colaborador de registrar pagamentos em Faturas ou vendas no PDV.
+- Ocultar preços de produtos e valores de orçamentos/faturas necessários ao atendimento.
 - Criar um novo papel `admin` ou alterar o gerenciamento de equipe.
 - Criar categorias, relatórios de popularidade ou automação baseada no número de vendas.
 - Refazer as telas de orçamento, cliente ou equipe com base apenas nas imagens enviadas.
 
-Esses itens podem afetar o trabalho diário e não estão especificados com clareza na conversa.
+Os itens acima não fazem parte do escopo confirmado pelo cliente.
 
-## 8. Decisões pendentes
+## 8. Decisões confirmadas
 
-1. **Limite financeiro:** além de `Contas a Receber`, `Contas a Pagar` e `Relatórios`, os colaboradores podem ver indicadores de receita no Dashboard/PDV, valores em faturas e o histórico de pagamentos? Podem registrar pagamentos? Recomendação inicial: esconder a gestão/visão consolidada financeira e manter os valores necessários para fazer orçamentos e faturas.
-2. **Favoritos:** a seleção deve ser compartilhada para toda a equipe ou cada pessoa pode montar sua própria lista? Recomendação inicial: compartilhada no catálogo da gráfica.
-3. **Modo local:** as regras por papel valem apenas no Supabase, onde existe login. Para controlar equipe, a instalação precisa usar o modo nuvem. Confirme se isso atende.
+1. **Financeiro — 15/10/2026:** restringir gestão e indicadores. Bloquear Contas a Pagar, Contas a Receber, Relatórios e indicadores financeiros consolidados para `member`; manter faturas, valores e pagamentos acessíveis para a operação.
+2. **Favoritos — 15/10/2026:** lista compartilhada por toda a gráfica.
+3. **Modo local:** sem usuário e sem papel individual, não é possível separar acesso por colaborador. A regra por papel se aplica ao modo Supabase; favoritos funcionam também no armazenamento local.
 
 ## 9. Requisitos de segurança e dados
 
-- Aplicar a autorização tanto na interface quanto na API/banco (RLS), incluindo bloqueio de URL direta.
-- Não expor dados financeiros pela carga global do app se o papel não tiver permissão.
+- Aplicar autorização na interface e no banco às coleções de gestão financeira; bloquear URL direta das telas financeiras.
+- Não apresentar indicadores consolidados ou dados de Contas a Pagar a `member`. Manter dados de faturas/pagamentos carregados por serem necessários às operações que o cliente preservou.
 - Não colocar senhas, chaves de API ou tokens neste PRD nem em `ACESSOS.md`.
 - Não reproduzir nos documentos os dados pessoais visíveis nas imagens da conversa.
 - Persistir qualquer novo campo de favorito nos dois modos de armazenamento e preservar registros existentes.
 
 ## 10. Dependências técnicas observadas
 
-- Papel da sessão: `src/context/AuthContext.tsx` ainda não disponibiliza o papel `owner`/`member` para as telas.
-- Navegação/rotas: `src/components/Layout.tsx` e `src/App.tsx` mostram os módulos financeiros sem filtro de papel.
-- Autorização de dados: `supabase/schema.sql` permite que membros ativos acessem os registros compartilhados do espaço.
+- Papel da sessão: `src/context/AuthContext.tsx` fornece o papel `owner`/`member` por uma função Supabase.
+- Navegação/rotas: `src/components/Layout.tsx` e `src/App.tsx` escondem e protegem as telas de gestão financeira.
+- Autorização de dados: RLS restringe `contas_pagar` ao `owner`; as tabelas de faturas/pagamentos permanecem compartilhadas conforme a decisão de negócio.
 - Produtos e PDV: `src/types.ts`, `src/pages/Itens.tsx`, `src/pages/Pdv.tsx`, `src/data/adapter.ts` e `supabase/schema.sql` são os pontos principais para o favorito.
 - Fluxos locais e em nuvem devem continuar compatíveis.
 
 ## 11. Critério de conclusão desta atualização
 
-A atualização estará pronta quando o escopo do FIN-01 for confirmado e seus critérios de aceite passarem; o PDV permitir a seleção rápida dos produtos frequentes com pesquisa para todo o catálogo; dados existentes forem preservados; e README, guia, fluxo e roteiro refletirem o comportamento publicado.
+A atualização estará pronta quando FIN-01 e PDV-01 passarem pelos critérios acima, os dados existentes forem preservados e README, guia, fluxo e roteiro refletirem o comportamento efetivamente publicado. A alteração de código, sozinha, não significa que a migração e o frontend já foram publicados.
 
 Os achados técnicos da auditoria são acompanhados separadamente em [AUDITORIA.md](AUDITORIA.md); eles não são pedidos do cliente nem mudam o escopo do [ROADMAP.md](ROADMAP.md).

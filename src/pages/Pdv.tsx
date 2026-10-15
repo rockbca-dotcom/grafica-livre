@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { FormaPagamento, Item, VendaRapidaItem } from '../types'
 import { useData } from '../context/DataContext'
+import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import {
   Button, Card, EmptyState, Field, KpiCard, MoneyInput, PageHeader, inputClass,
@@ -32,6 +33,8 @@ function tipoPreco(item: Item): string {
 
 export default function Pdv() {
   const { db, clienteById, createVendaRapida } = useData()
+  const { cloudMode, role } = useAuth()
+  const isOwner = !cloudMode || role === 'owner'
   const { showToast } = useToast()
   const [busca, setBusca] = useState('')
   const [carrinho, setCarrinho] = useState<VendaRapidaItem[]>([])
@@ -45,7 +48,9 @@ export default function Pdv() {
 
   const itensFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase()
-    return db.itens
+    const favoritos = db.itens.filter((item) => item.favorito)
+    const catalogoVisivel = termo || favoritos.length === 0 ? db.itens : favoritos
+    return catalogoVisivel
       .filter((item) => !termo || `${item.nome} ${item.descricao}`.toLowerCase().includes(termo))
       .sort((a, b) => a.nome.localeCompare(b.nome))
   }, [db.itens, busca])
@@ -163,8 +168,8 @@ export default function Pdv() {
       />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="Vendas hoje" value={String(vendasHoje.length)} to="/pdv" />
-        <KpiCard label="Recebido hoje" value={formatCents(totalHoje)} tone="good" to="/relatorios" />
+        {isOwner && <KpiCard label="Vendas hoje" value={String(vendasHoje.length)} to="/pdv" />}
+        {isOwner && <KpiCard label="Recebido hoje" value={formatCents(totalHoje)} tone="good" to="/relatorios" />}
         <KpiCard
           label="Produtos no carrinho"
           value={String(carrinho.reduce((sum, linha) => sum + linha.qtd, 0))}
@@ -196,6 +201,13 @@ export default function Pdv() {
           </div>
 
           <div className="p-5">
+            <p className="mb-3 text-xs text-slate-500" aria-live="polite">
+              {busca.trim()
+                ? 'Resultados da busca em todo o catálogo.'
+                : db.itens.some((item) => item.favorito)
+                  ? 'Favoritos da gráfica. Pesquise para encontrar qualquer outro produto.'
+                  : 'Ainda não há favoritos. O catálogo completo está sendo exibido.'}
+            </p>
             {itensFiltrados.length === 0 ? (
               <EmptyState
                 icon="📦"
@@ -374,7 +386,7 @@ export default function Pdv() {
         </Card>
       </div>
 
-      <Card className="mt-5">
+      {isOwner && <Card className="mt-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold text-slate-700">Últimas vendas rápidas</h2>
@@ -393,7 +405,7 @@ export default function Pdv() {
                   <th className="px-3 py-2">Data</th>
                   <th className="px-3 py-2">Cliente</th>
                   <th className="px-3 py-2">Pagamento</th>
-                  <th className="px-3 py-2 text-right">Total</th>
+                  {isOwner && <th className="px-3 py-2 text-right">Total</th>}
                 </tr>
               </thead>
               <tbody>
@@ -403,14 +415,14 @@ export default function Pdv() {
                     <td className="px-3 py-2">{formatDateBR(venda.data)}</td>
                     <td className="px-3 py-2">{venda.clienteId ? clienteById(venda.clienteId)?.nome ?? 'Cliente removido' : 'Balcão'}</td>
                     <td className="px-3 py-2">{formaPagamentoLabel(venda.formaPagamento)}</td>
-                    <td className="px-3 py-2 text-right font-semibold">{formatCents(venda.total)}</td>
+                    {isOwner && <td className="px-3 py-2 text-right font-semibold">{formatCents(venda.total)}</td>}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </Card>
+      </Card>}
     </div>
   )
 }
