@@ -6,7 +6,7 @@
 
 ## 1. Em uma frase
 
-O Gráfica Livre ajuda uma gráfica a registrar clientes e produtos, vender, orçar, faturar, acompanhar a produção e administrar suas finanças; a próxima atualização deve separar o acesso financeiro por papel e tornar o PDV mais rápido para os produtos recorrentes.
+O Gráfica Livre ajuda uma gráfica a registrar clientes e produtos, vender, orçar, faturar, acompanhar a produção e administrar suas finanças; o código atual restringe a gestão financeira por papel e agiliza o PDV com favoritos compartilhados, mas a versão online depende da migração e publicação descritas em [DEPLOY.md](DEPLOY.md).
 
 ## 2. Problemas do cliente
 
@@ -80,8 +80,6 @@ Não há um papel `admin` separado no código atual. Esta atualização deve usa
 - O assistente não fornece resumo consolidado financeiro nem histórico de vendas rápidas a `member`; consultas de faturas para operação permanecem disponíveis.
 - O `owner` continua usando os módulos financeiros normalmente.
 - Clientes, produtos, orçamentos, faturas e produção continuam operacionais para colaboradores.
-- O `owner` continua usando os módulos financeiros normalmente.
-- Clientes, produtos, orçamentos, produção e demais operações aprovadas para colaboradores continuam funcionando.
 
 **Limite técnico importante:** `Contas a Receber` e Faturas usam as mesmas tabelas de `faturas` e `pagamentos`. Como o cliente autorizou valores e pagamentos na operação de faturas, a restrição dessa tela é aplicada na navegação e na rota; esses registros seguem acessíveis pela API para a tela Faturas. `contas_pagar` e a leitura do histórico de `vendas_rapidas` ficam restritas por RLS; o colaborador ainda pode inserir novas vendas rápidas.
 
@@ -91,7 +89,7 @@ Não há um papel `admin` separado no código atual. Esta atualização deve usa
 **Origem:** fala no vídeo do PDV.
 **Regra confirmada:** permitir marcar/desmarcar favoritos compartilhados por toda a gráfica e usar essa seleção para dar acesso rápido aos itens mais vendidos.
 
-**Aceite proposto:**
+**Critérios de aceite:**
 
 - O catálogo de produtos permite marcar e desmarcar favoritos.
 - Com favoritos configurados, a tela inicial do PDV mostra somente esses itens.
@@ -122,6 +120,7 @@ Os itens acima não fazem parte do escopo confirmado pelo cliente.
 ## 9. Requisitos de segurança e dados
 
 - Aplicar autorização na interface e no banco às coleções de gestão financeira; bloquear URL direta das telas financeiras.
+- Restringir por RLS a leitura do histórico de `vendas_rapidas` a `owner`, mantendo a inserção de novas vendas por `member`.
 - Não apresentar indicadores consolidados ou dados de Contas a Pagar a `member`. Manter dados de faturas/pagamentos carregados por serem necessários às operações que o cliente preservou.
 - Não colocar senhas, chaves de API ou tokens neste PRD nem em `ACESSOS.md`.
 - Não reproduzir nos documentos os dados pessoais visíveis nas imagens da conversa.
@@ -131,7 +130,7 @@ Os itens acima não fazem parte do escopo confirmado pelo cliente.
 
 - Papel da sessão: `src/context/AuthContext.tsx` fornece o papel `owner`/`member` por uma função Supabase.
 - Navegação/rotas: `src/components/Layout.tsx` e `src/App.tsx` escondem e protegem as telas de gestão financeira.
-- Autorização de dados: RLS restringe `contas_pagar` ao `owner`; as tabelas de faturas/pagamentos permanecem compartilhadas conforme a decisão de negócio.
+- Autorização de dados: RLS restringe `contas_pagar` e a leitura do histórico de `vendas_rapidas` ao `owner`; `member` pode inserir venda. As tabelas de faturas/pagamentos permanecem compartilhadas conforme a decisão de negócio.
 - Produtos e PDV: `src/types.ts`, `src/pages/Itens.tsx`, `src/pages/Pdv.tsx`, `src/data/adapter.ts` e `supabase/schema.sql` são os pontos principais para o favorito.
 - Fluxos locais e em nuvem devem continuar compatíveis.
 

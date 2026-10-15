@@ -68,11 +68,11 @@ Salve.
 
 Todos os colaboradores cadastrados usam o mesmo link e trabalham nos mesmos dados da gráfica. O proprietário pode revogar e reativar acessos na tela **Equipe**. O sistema cria as contas diretamente no Supabase e não depende do envio de convites por e-mail.
 
-O código da atualização restringe as telas financeiras a `owner`, protege a tabela `contas_pagar` com RLS e salva favoritos compartilhados. Em ambiente existente, aplique a nova migração no banco e publique a versão atual do frontend antes de considerar essas regras ativas online. Colaboradores continuam usando faturas, valores e pagamentos na tela Faturas.
+O código da atualização restringe as telas de gestão financeira a `owner`, protege `contas_pagar` e o histórico de `vendas_rapidas` com RLS e salva favoritos compartilhados. Em ambiente existente, aplique a nova migração no banco e publique a versão atual do frontend antes de considerar essas regras ativas online. Colaboradores continuam usando faturas, valores, pagamentos e registro de novas vendas no PDV.
 
 ### Migrações em uma instalação existente
 
-Se o sistema já está em produção, faça um backup externo e aplique os arquivos ainda não executados em `supabase/migrations/` em ordem temporal no **SQL Editor** antes de publicar o frontend. O histórico deste repositório inclui `20261001212303_multiusuarios.sql`, `20261001213922_proximo_numero_search_path.sql`, `20261001222753_cadastro_manual_colaboradores.sql` e `20261015120000_favoritos_e_acesso_financeiro.sql`. A última migração adiciona `itens.favorito`, expõe o papel ativo da sessão e restringe `contas_pagar` ao proprietário. Execute apenas migrações ainda não aplicadas, uma por vez, confira o resultado e não repita um arquivo que terminou com erro sem antes conferir o estado do banco.
+Se o sistema já está em produção, faça um backup externo e aplique os arquivos ainda não executados em `supabase/migrations/` em ordem temporal no **SQL Editor** antes de publicar o frontend. O histórico deste repositório inclui `20261001212303_multiusuarios.sql`, `20261001213922_proximo_numero_search_path.sql`, `20261001222753_cadastro_manual_colaboradores.sql` e `20261015120000_favoritos_e_acesso_financeiro.sql`. A última migração adiciona `itens.favorito`, expõe o papel ativo da sessão, restringe `contas_pagar` e a leitura do histórico de `vendas_rapidas` ao proprietário e mantém a inserção de vendas pelo colaborador. Execute apenas migrações ainda não aplicadas, uma por vez, confira o resultado e não repita um arquivo que terminou com erro sem antes conferir o estado do banco.
 
 ### Funções de servidor
 
@@ -108,5 +108,5 @@ Depois atualize a Site URL no Supabase para esse domínio.
 - Não deixe o cadastro público ligado no Supabase.
 - Não use a chave `service_role` no frontend. Só a `anon`.
 - Os dados de teste do seu PC **não sobem sozinhos**. Exporte o JSON no modo local e importe no sistema online, se o app tiver essa opção na tela de configurações/backup.
-- Não considere a restrição financeira ativa na nuvem antes de aplicar a migração e publicar o frontend desta versão.
+- Não considere as restrições financeiras e o histórico protegido do PDV ativos na nuvem antes de aplicar a migração e publicar o frontend desta versão.
 - Não ative o assistente sem aprovar o envio de mensagens e resultados do banco ao serviço externo.

@@ -25,6 +25,20 @@ flowchart TD
 
 O menu e a rota bloqueiam as telas financeiras para `member`. RLS libera `contas_pagar` somente a `owner`; em `vendas_rapidas`, o colaborador pode inserir uma venda, mas não ler o histórico. Faturas e pagamentos permanecem compartilhados porque são usados no atendimento e na cobrança.
 
+### 1.1 O que acontece com uma venda rápida
+
+```mermaid
+flowchart TD
+    PDV[Abrir PDV] --> ADD[Montar carrinho e registrar venda]
+    ADD --> ROLE{Modo e papel}
+    ROLE -->|Local| LOCAL[Salvar no navegador; sem separar usuários]
+    ROLE -->|Supabase: owner| OWNER[Inserir venda e consultar histórico]
+    ROLE -->|Supabase: member| MEMBER[Inserir venda; sem consultar ou alterar histórico]
+    MEMBER --> TOTAL[Ver total do carrinho para concluir]
+```
+
+No Supabase, essa separação também é aplicada no banco pela RLS. O membro não pode ler vendas antigas, mas pode registrar as novas; no modo local, o navegador não identifica quem está usando o sistema.
+
 ## 2. O que cada papel enxerga no resumo
 
 ```mermaid

@@ -54,7 +54,7 @@ O ponto de entrada visual é `src/main.tsx`; `src/App.tsx` organiza os provedore
 | Relatórios | Abas de Vendas, Fluxo de Caixa e Clientes, com período e exportação CSV; acesso de `owner`. | Faturas, pagamentos, vendas rápidas, despesas e clientes. |
 | Perfil da Empresa | Dados que aparecem nos documentos, logo, chave PIX, prefixo e próximos números. Consulta CEP pelo serviço ViaCEP. | `empresa` |
 | Equipe | No modo Supabase, proprietário cadastra, revoga e reativa colaboradores. | `workspace_members`, usuários do Supabase Auth |
-| Configurações | Exporta JSON, importa backup atual ou formato legado e informa o modo de armazenamento. | Todas as coleções |
+| Configurações | Exporta JSON, importa backup atual ou formato legado e informa o modo de armazenamento. No Supabase, a exportação contém os registros que a sessão pode consultar segundo a RLS. | Coleções do espaço permitidas à sessão |
 | Assistente | Opcional no modo Supabase: consulta dados e propõe criar cliente, orçamento ou venda; ações exigem confirmação. Para `member`, não habilita resumo financeiro nem listagem do histórico de vendas rápidas; conserva consultas operacionais e de faturas. | Consultas RLS; NVIDIA; ações via Edge Function |
 
 ## 4. Regras atuais dos principais fluxos
@@ -109,7 +109,7 @@ Os vínculos entre documentos são mantidos pela aplicação; várias colunas de
 | Local | Um objeto JSON na chave `graficaLivre` do `localStorage` do navegador. | Não tem login, sincronização, cópia automática da aplicação nem permissão individual. Limpar dados do navegador pode apagar o sistema. |
 | Nuvem | Banco Supabase, acessado pelo cliente autenticado e protegido por RLS. | `owner` vê o financeiro. `member` não abre Contas a Receber, Contas a Pagar ou Relatórios; RLS restringe leitura de `contas_pagar`/`vendas_rapidas` a `owner` e permite inserir venda ao colaborador. Faturas, pagamentos e itens continuam compartilhados para operação e favoritos. |
 
-O adaptador traduz `camelCase` do TypeScript para `snake_case` do banco. Favoritos usam `itens.favorito`, são compartilhados entre membros e itens/backs antigos sem o campo são lidos como não favoritos.
+O adaptador traduz `camelCase` do TypeScript para `snake_case` do banco. Favoritos usam `itens.favorito`, são compartilhados entre membros e itens/backups antigos sem o campo são lidos como não favoritos.
 
 ## 7. Autenticação e papéis atuais
 

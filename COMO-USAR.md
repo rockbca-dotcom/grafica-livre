@@ -34,8 +34,8 @@ Faça nesta ordem:
 4. **Orçamentos:** selecione um cliente, adicione itens, confira imposto, frete, desconto, prazo e termos. Gere o PDF ou compartilhe.
 5. **Faturas:** converta um orçamento aprovado ou crie uma fatura diretamente. Informe vencimento e forma de pagamento.
 6. **Produção:** ao faturar, o sistema cria um card na coluna Arte. Mova-o por Impressão, Acabamento, Pronto e Entregue. Você também pode criar cards manuais.
-7. **Recebimentos e despesas:** registre os pagamentos de faturas em Contas a Receber e cadastre os gastos em Contas a Pagar.
-8. **Relatórios:** selecione período e aba; use Exportar CSV para baixar a visão apresentada.
+7. **Recebimentos e despesas:** o proprietário registra pagamentos em Contas a Receber e cadastra gastos em Contas a Pagar. O colaborador registra pagamentos dentro de Faturas.
+8. **Relatórios:** o proprietário seleciona período e aba e usa Exportar CSV para baixar a visão apresentada.
 
 ## O que cada área faz
 
@@ -67,7 +67,7 @@ No modo Supabase, apenas `owner` abre Contas a Receber, Contas a Pagar e Relató
 
 ## Backup, exportação e restauração
 
-- Na tela Configurações, **Exportar backup** baixa um JSON manual com as coleções do espaço atual.
+- Na tela Configurações, **Exportar backup** baixa um JSON manual com as coleções disponíveis para a sessão. No modo Supabase, a RLS do banco limita quais registros o usuário pode exportar.
 - No modo local, o backup fica no computador até você guardá-lo em outro lugar. Se limpar os dados do navegador ou perder o computador, a aplicação não consegue recuperá-los sozinha.
 - No modo nuvem, o app também permite exportar JSON, mas o backup é manual. Verifique separadamente a política de cópias de segurança do projeto Supabase; o app não agenda nem confirma snapshots.
 - **Importar substitui os dados atuais** do espaço e não é uma operação aditiva. Antes de importar, exporte um backup separado e confira o arquivo. A restauração atual não valida completamente o formato e, no Supabase, uma falha durante a substituição pode deixar os registros incompletos. Consulte AUD-03 em [AUDITORIA.md](AUDITORIA.md).

@@ -47,7 +47,7 @@
 - [ ] Conferir manualmente os cenários de proprietário, colaborador e acesso direto às rotas.
 - [ ] Conferir favoritos no modo local e Supabase, inclusive depois de atualizar a tela.
 - [ ] Conferir a busca com produtos favoritos e não favoritos e a leitura de itens antigos.
-- [x] Atualizar PRD e README com as regras confirmadas e o estado real do trabalho.
+- [x] Sincronizar PRD, README, fluxograma, arquitetura, guias de uso/publicação, inventário de acessos e auditoria com o código e as decisões confirmadas.
 - [ ] Aplicar migração do banco e publicar o frontend na ordem registrada no DEPLOY.md.
 - [ ] Registrar a data e o responsável pela publicação, sem incluir senhas ou chaves.
 

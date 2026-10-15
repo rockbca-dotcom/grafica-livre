@@ -56,7 +56,7 @@ Avisos consultados pelo próprio relatório:
 ### AUD-05 — Dados e perguntas do assistente são enviados à NVIDIA
 
 **Prioridade:** P2 — decisão de privacidade e controle de acesso.
-**Evidência:** `supabase/functions/assistente-ia/index.ts` monta mensagens e resultados de consulta e os envia a `https://integrate.api.nvidia.com/v1/chat/completions`. A função consulta clientes, orçamentos, faturas e vendas com o JWT da pessoa. O código define limite de mensagens e tamanho, mas a documentação da interface não explica que dados saem do Supabase.
+**Evidência inicial (14/10/2026):** `supabase/functions/assistente-ia/index.ts` monta mensagens e resultados de consulta e os envia a `https://integrate.api.nvidia.com/v1/chat/completions`. A função consulta clientes, orçamentos, faturas e vendas com o JWT da pessoa. O código define limite de mensagens e tamanho; na revisão inicial, os guias ainda não explicavam que dados saem do Supabase.
 
 **Estado em 15/10/2026:** [COMO-USAR.md](COMO-USAR.md) agora informa que mensagens e resultados de consulta são enviados à NVIDIA; as ferramentas de resumo e histórico de venda também são limitadas pelo papel. Continua pendente a revisão de termos e retenção com o provedor e uma decisão de política interna. Não inserir dados pessoais/sigilosos no assistente sem autorização da empresa.
 

@@ -23,14 +23,14 @@ Para entender o que cada tela faz, os dados que guarda e as limitações atuais,
 
 O sistema pode ser usado localmente em um navegador ou conectado ao Supabase para login e dados compartilhados entre dispositivos. No modo conectado, `owner` é o proprietário/administrador e `member` é o colaborador. O colaborador trabalha com clientes, produtos, orçamentos, faturas, pagamentos operacionais, produção e venda no PDV. Contas a Pagar, Contas a Receber, Relatórios e indicadores consolidados ficam para o proprietário. O modo local não identifica pessoas e, por isso, não separa permissões.
 
-## Evolução solicitada pelo cliente
+## Solicitações do cliente e estado da atualização
 
-A conversa de 14/10/2026 trouxe dois pedidos para a próxima atualização:
+A conversa de 14/10/2026 trouxe dois pedidos, já implementados no código deste repositório:
 
 1. Restringir a área financeira ao proprietário/administrador.
 2. Destacar no PDV, como favoritos, os produtos mais vendidos e localizar os demais pela busca.
 
-O escopo foi confirmado em 15/10/2026: gestão e indicadores financeiros restritos ao proprietário, faturas e pagamentos operacionais liberados para a equipe, e favoritos do PDV compartilhados pela gráfica. A implementação está registrada em [PRD](PRD.md); a migração do banco e a publicação ainda precisam ser aplicadas para refletir esta versão no ambiente online. A sequência está em [ROADMAP](ROADMAP.md).
+O escopo foi confirmado em 15/10/2026: gestão e indicadores financeiros restritos ao proprietário, faturas e pagamentos operacionais liberados para a equipe, e favoritos do PDV compartilhados pela gráfica. A versão do repositório contém essas mudanças; para ativá-las no ambiente online, ainda é necessário aplicar a migração Supabase e publicar o frontend. O que já está pronto e o que falta conferir está em [ROADMAP](ROADMAP.md), e as regras completas estão no [PRD](PRD.md).
 
 ## Documentação do projeto
 
