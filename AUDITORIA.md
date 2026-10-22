@@ -1,12 +1,12 @@
 # Auditoria do sistema
 
 **Data da revisão inicial:** 14/10/2026. **Atualizações do código:** 15/10/2026 e 22/10/2026.
-**Escopo desta revisão:** leitura das mudanças, `npm run lint`, `npm run build` e teste manual do histórico e da lista do PDV no navegador local usando dados fictícios.
-**Limite:** não houve acesso ao Supabase/Vercel de produção nem dados de clientes. As migrações HIST-01 e PDV-02 não foram executadas contra Supabase local ou online; os testes manuais usaram armazenamento local. Não foi feito teste manual de interface em produção.
+**Escopo desta revisão:** leitura das mudanças, `npm run lint`, `npm run build`, renderização do comprovante e teste manual local do perfil da empresa e da lista de vendas com dados fictícios.
+**Limite:** não houve acesso ao Supabase/Vercel de produção nem dados de clientes. As migrações não foram executadas contra Supabase local ou online; os testes de interface usaram armazenamento local e não simulam `member`. Não foi validada impressão em impressora física.
 
 ## Resumo para decisão
 
-1. FIN-01, PDV-01, HIST-01 e PDV-02 estão no código. O histórico por cliente foi validado no modo local; a lista geral do PDV agora está disponível na interface para colaboradores. Para o modo nuvem, as migrações pendentes precisam ser aplicadas e a RLS ainda deve ser validada em um banco Supabase.
+1. FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05 e EMP-01 estão no código. Histórico, busca/paginação, perfil com Inscrição Estadual e fluxo do comprovante foram conferidos localmente com dados fictícios. Para o modo nuvem, a migração pendente precisa ser aplicada e a RLS/autoria ainda deve ser validada em um banco Supabase.
 2. A restauração de backup substitui os dados atuais e não é validada nem transacional no Supabase; uma falha no meio pode deixar dados incompletos.
 3. `npm audit` sinaliza cinco dependências com vulnerabilidades classificadas como altas.
 4. Lint e build funcionaram. O lint apontou 10 avisos; o build apontou um aviso de arquivos JavaScript grandes. Não existe comando/suíte de teste automatizado configurado.
@@ -16,11 +16,11 @@
 ### AUD-01 — Restrições por papel e histórico do cliente precisam ser aplicados no ambiente online
 
 **Prioridade:** P1 até a implantação; o código local já implementa o escopo confirmado.
-**Impacto atual do código:** `member` não vê nem abre as rotas Contas a Receber, Contas a Pagar e Relatórios; Dashboard/PDV ocultam indicadores, mas a lista de últimas vendas rápidas do PDV é visível. A RLS restringe `contas_pagar` a `owner`, permite que `member` insira vendas e, após PDV-02, permite leitura de todas as vendas rápidas do espaço. Faturas, valores e pagamentos permanecem acessíveis conforme a escolha do cliente.
+**Impacto atual do código:** `member` não vê nem abre as rotas Contas a Receber, Contas a Pagar e Relatórios; Dashboard/PDV ocultam indicadores, mas a lista completa paginada de vendas rápidas é visível. A RLS restringe `contas_pagar` a `owner`, permite que `member` insira vendas se `vendedor_id` corresponder à sessão e permite leitura das vendas do próprio espaço. Faturas, valores e pagamentos permanecem acessíveis conforme a escolha do cliente.
 
-**Evidência no repositório:** papel carregado por `current_workspace_role()`; guardas de rota e menu em `src/App.tsx` e `src/components/Layout.tsx`; indicadores condicionados em Dashboard/PDV; consultas do assistente limitadas por papel; políticas no esquema e nas migrações `20261015120000_favoritos_e_acesso_financeiro.sql`, `20261022120000_historico_pedidos_cliente.sql` e `20261022130000_vendas_rapidas_member_history.sql`. O histórico por cliente fica em `src/pages/Clientes.tsx`; a lista recente do PDV, em `src/pages/Pdv.tsx`.
+**Evidência no repositório:** papel carregado por `current_workspace_role()`; guardas de rota e menu em `src/App.tsx` e `src/components/Layout.tsx`; indicadores condicionados em Dashboard/PDV; consultas do assistente limitadas por papel; políticas no esquema e nas migrações `20261015120000_favoritos_e_acesso_financeiro.sql`, `20261022120000_historico_pedidos_cliente.sql`, `20261022130000_vendas_rapidas_member_history.sql` e `20261022140000_comprovante_venda_rapida.sql`. O histórico por cliente fica em `src/pages/Clientes.tsx`; lista, busca, autoria e impressão ficam em `src/pages/Pdv.tsx` e `src/lib/reciboVendaRapida.ts`.
 
-**Validação e próximo passo:** o histórico por cliente foi conferido manualmente no modo local com um orçamento e uma venda direta. Aplicar as migrações pendentes no Supabase, testar a lista e a RLS como `owner` e `member` e publicar o frontend. A policy de leitura dá acesso às linhas completas de venda, embora a lista mostre apenas número, data, cliente, pagamento e total. `Contas a Receber` não tem tabela exclusiva: a rota é bloqueada, mas faturas e pagamentos seguem disponíveis para a tela Faturas. O modo local não separa papéis. Critérios e sequência: [PRD.md](PRD.md) e [ROADMAP.md](ROADMAP.md).
+**Validação e próximo passo:** os testes locais não simulam RLS nem autoria autenticada. Aplicar as migrações pendentes no Supabase, testar login, inserção com o ID correto e tentativa de ID diferente como `owner` e `member`, e publicar frontend e função `assistente-ia`. A policy de leitura dá acesso às linhas completas de venda, embora a interface exiba a lista resumida e permita imprimir o comprovante. `Contas a Receber` não tem tabela exclusiva: a rota é bloqueada, mas faturas e pagamentos seguem disponíveis para a tela Faturas. Critérios e sequência: [PRD.md](PRD.md) e [ROADMAP.md](ROADMAP.md).
 
 ### AUD-02 — `npm audit` encontrou cinco vulnerabilidades altas
 
@@ -88,6 +88,14 @@ Avisos consultados pelo próprio relatório:
 
 **Próximo passo recomendado:** contar todas as coleções exportadas ou retirar o número.
 
+### AUD-10 — Impressão depende do diálogo e do driver da impressora
+
+**Prioridade:** P2 — confirmar o resultado no equipamento de produção.
+
+**Evidência:** o comprovante gera uma página HTML com conteúdo de 88 mm e chama `window.print()`. A escolha do papel contínuo de 88 mm, margens e impressora depende do navegador e do driver instalado no computador.
+
+**Validação e próximo passo:** o HTML do recibo foi conferido e a tela local acionou o fluxo de impressão, mas não havia impressora térmica disponível para validar corte, avanço do papel, alinhamento ou densidade. Na primeira implantação, selecionar 88 mm nas preferências de impressão e conferir um cupom físico. O diálogo continua oferecendo cancelar sem desfazer a venda.
+
 ## Validações executadas
 
 | Verificação | Resultado |
@@ -96,11 +104,18 @@ Avisos consultados pelo próprio relatório:
 | `npm run build` (14/10 e 15/10) | Concluiu com código 0; TypeScript e Vite produziram o bundle. O Vite avisou sobre chunks maiores que 500 KB; bundle principal minificado de aproximadamente 910 KB e chunk PDF de aproximadamente 1,84 MB. |
 | `npm run lint` (22/10) | Concluiu com código 0 após a implementação do histórico; permanecem 10 avisos `react(only-export-components)`. |
 | `npm run build` (22/10) | Concluiu com código 0 após a implementação do histórico; permanece aviso de chunk acima de 500 KB. |
+| `npm run lint` (22/10, impressão e paginação) | Concluiu com código 0; permanecem os mesmos 10 avisos `react(only-export-components)`. |
+| `npm run build` (22/10, impressão e paginação) | Concluiu com código 0; permanecem os avisos de bundle acima de 500 KB. |
+| Revalidação conjunta final (22/10): lint, build e `git diff --check` | Os três comandos concluíram com código 0. O lint manteve 10 avisos conhecidos; o build gerou bundle principal de 920 KB e chunk PDF de 1,84 MB, com aviso de tamanho; `git diff --check` não apontou erros de whitespace. |
+| Teste manual local de impressão/lista (22/10) | Registrei 11 vendas fictícias, conferi 10 linhas na página 1, 1 na página 2, busca por número e busca sem acento por vendedor; a nova busca voltou à primeira página. A tela mostrou botão de impressão por venda e a confirmação após registro. Não foi testada uma impressora física nem a sessão `member`. |
+| Teste manual local de Inscrição Estadual (22/10) | Salvei um valor de teste no Perfil da Empresa, naveguei para outra tela e confirmei que o valor continuou preenchido. |
+| Verificação do modelo do comprovante (22/10) | Renderização TypeScript com dados fictícios confirmou largura de conteúdo, CNPJ, IE, cliente, vendedor, número, item, pagamento e total; IE vazia não gera linha no recibo. |
 | Teste manual local (22/10) | A tela Clientes mostrou no histórico o orçamento ORC-1 e a venda PDV-20261022-F14AB9 do cliente fictício, com itens, totais, status e datas. Testado no modo local; não valida RLS/Supabase. |
 | Teste manual local de PDV-02 (22/10) | O cartão **Últimas vendas rápidas** foi exibido no PDV local com número, data, cliente, pagamento e total. O modo local não simula `member` nem RLS; a visibilidade do colaborador e o acesso ao banco precisam ser confirmados após aplicar a migração no Supabase. |
 | `npm audit --audit-level=moderate` | Código 1; cinco vulnerabilidades altas acima. |
 | Testes automatizados | Não executados: o projeto não configura framework nem script `test`. |
 | Ambiente de produção | Não validado: sem acesso às contas/projetos Supabase e Vercel. |
+| Supabase/Edge Function | Migração e RLS não executadas em um projeto Supabase; `deno` e `psql` não estão disponíveis neste ambiente para checagem isolada da função ou do SQL. |
 | Docker local | A tentativa desta revisão não encontrou o daemon Docker ativo; nenhum teste com container foi executado. O container registrado na revisão de 15/10 não valida o deploy online. |
 
 ## Ordem recomendada de correção

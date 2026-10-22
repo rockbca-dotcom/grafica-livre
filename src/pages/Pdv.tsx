@@ -9,6 +9,13 @@ import {
 } from '../components/ui'
 import { formatCents } from '../lib/money'
 import { formatDateBR, todayISO } from '../lib/dates'
+import {
+  abrirJanelaComprovante,
+  formaPagamentoLabel,
+  imprimirComprovanteVendaRapida,
+  preencherJanelaComprovante,
+} from '../lib/reciboVendaRapida'
+import { supabase } from '../data/supabaseClient'
 
 const FORMAS_PAGAMENTO: [FormaPagamento, string][] = [
   ['pix', 'PIX'],
@@ -19,8 +26,8 @@ const FORMAS_PAGAMENTO: [FormaPagamento, string][] = [
   ['boleto', 'Boleto'],
 ]
 
-function formaPagamentoLabel(forma: FormaPagamento): string {
-  return FORMAS_PAGAMENTO.find(([value]) => value === forma)?.[1] ?? forma
+function normalizarBusca(valor: string): string {
+  return valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 }
 
 function precoPadrao(item: Item): number {
@@ -33,7 +40,7 @@ function tipoPreco(item: Item): string {
 
 export default function Pdv() {
   const { db, clienteById, createVendaRapida } = useData()
-  const { cloudMode, role } = useAuth()
+  const { cloudMode, role, session } = useAuth()
   const isOwner = !cloudMode || role === 'owner'
   const { showToast } = useToast()
   const [busca, setBusca] = useState('')
@@ -45,6 +52,8 @@ export default function Pdv() {
   const [descricaoAvulsa, setDescricaoAvulsa] = useState('')
   const [valorAvulso, setValorAvulso] = useState(0)
   const [salvando, setSalvando] = useState(false)
+  const [buscaVendas, setBuscaVendas] = useState('')
+  const [paginaVendas, setPaginaVendas] = useState(1)
 
   const itensFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase()
@@ -61,10 +70,36 @@ export default function Pdv() {
     [db.vendasRapidas],
   )
   const totalHoje = vendasHoje.reduce((sum, venda) => sum + venda.total, 0)
-  const recentes = useMemo(
-    () => [...db.vendasRapidas].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).slice(0, 8),
-    [db.vendasRapidas],
-  )
+  const vendasFiltradas = useMemo(() => {
+    const termo = normalizarBusca(buscaVendas)
+    return [...db.vendasRapidas]
+      .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm))
+      .filter((venda) => {
+        if (!termo) return true
+        const cliente = venda.clienteId
+          ? db.clientes.find((item) => item.id === venda.clienteId)?.nome ?? 'Cliente removido'
+          : 'Balcão'
+        const campos = [
+          venda.numero,
+          venda.data,
+          formatDateBR(venda.data),
+          cliente,
+          venda.vendedorNome || 'Não identificado',
+          formaPagamentoLabel(venda.formaPagamento),
+        ]
+        return campos.some((campo) => normalizarBusca(campo).includes(termo))
+      })
+  }, [db.clientes, db.vendasRapidas, buscaVendas])
+  const totalPaginas = Math.max(1, Math.ceil(vendasFiltradas.length / 10))
+  const paginaAtual = Math.min(paginaVendas, totalPaginas)
+  const vendasPagina = vendasFiltradas.slice((paginaAtual - 1) * 10, paginaAtual * 10)
+
+  const imprimirVenda = (venda: (typeof db.vendasRapidas)[number]) => {
+    const cliente = venda.clienteId ? clienteById(venda.clienteId) : undefined
+    if (!imprimirComprovanteVendaRapida(venda, cliente, db.empresa)) {
+      showToast('O navegador bloqueou a janela. Permita pop-ups para imprimir o comprovante.', 'error')
+    }
+  }
 
   const adicionarItem = (item: Item) => {
     const valorUnit = precoPadrao(item)
@@ -137,23 +172,57 @@ export default function Pdv() {
       showToast('O total da venda precisa ser maior que zero.', 'error')
       return
     }
+    const janelaImpressao = abrirJanelaComprovante()
     setSalvando(true)
     try {
+      const userId = session?.user.id ?? null
+      let vendedorNome = ''
+      if (session) {
+        const metadata = session.user.user_metadata as Record<string, unknown>
+        vendedorNome = String(metadata.full_name || metadata.name || session.user.email || '').trim()
+        if (supabase) {
+          const { data: membro } = await supabase
+            .from('workspace_members')
+            .select('full_name')
+            .eq('user_id', session.user.id)
+            .maybeSingle()
+          if (membro?.full_name?.trim()) vendedorNome = membro.full_name.trim()
+        }
+      }
       const venda = await createVendaRapida({
         clienteId: clienteId || null,
+        vendedorId: userId,
+        vendedorNome,
         data,
         formaPagamento,
         itens: carrinho,
         total,
         observacao: observacao.trim(),
       })
-      showToast(`Venda ${venda.numero} registrada no caixa.`)
+      if (janelaImpressao) {
+        try {
+          preencherJanelaComprovante(
+            janelaImpressao,
+            venda,
+            venda.clienteId ? clienteById(venda.clienteId) : undefined,
+            db.empresa,
+          )
+          showToast(`Venda ${venda.numero} registrada. O comprovante está pronto para impressão.`)
+        } catch {
+          janelaImpressao.close()
+          showToast(`Venda ${venda.numero} registrada. Use o botão de impressão na lista para emitir o comprovante.`)
+        }
+      } else {
+        showToast(`Venda ${venda.numero} registrada. O navegador bloqueou a impressão; use o botão da lista.`)
+      }
       setCarrinho([])
       setClienteId('')
       setObservacao('')
       setData(todayISO())
       setFormaPagamento('pix')
+      setPaginaVendas(1)
     } catch (err) {
+      janelaImpressao?.close()
       showToast(err instanceof Error ? err.message : String(err), 'error')
     } finally {
       setSalvando(false)
@@ -394,33 +463,80 @@ export default function Pdv() {
           </div>
           <span className="text-xs text-slate-400">{db.vendasRapidas.length} no total</span>
         </div>
-        {recentes.length === 0 ? (
+        <Field label="Buscar venda" className="mb-3">
+          <input
+            className={inputClass}
+            placeholder="Número, data, cliente, vendedor ou pagamento..."
+            value={buscaVendas}
+            onChange={(event) => {
+              setBuscaVendas(event.target.value)
+              setPaginaVendas(1)
+            }}
+          />
+        </Field>
+        {db.vendasRapidas.length === 0 ? (
           <p className="py-8 text-center text-sm text-slate-400">Nenhuma venda rápida registrada ainda.</p>
+        ) : vendasFiltradas.length === 0 ? (
+          <p className="py-8 text-center text-sm text-slate-400">Nenhuma venda encontrada com essa busca.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-3 py-2">Número</th>
-                  <th className="px-3 py-2">Data</th>
-                  <th className="px-3 py-2">Cliente</th>
-                  <th className="px-3 py-2">Pagamento</th>
-                  <th className="px-3 py-2 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentes.map((venda) => (
-                  <tr key={venda.id} className="border-b border-slate-100 last:border-0">
-                    <td className="px-3 py-2 font-medium text-slate-700">{venda.numero}</td>
-                    <td className="px-3 py-2">{formatDateBR(venda.data)}</td>
-                    <td className="px-3 py-2">{venda.clienteId ? clienteById(venda.clienteId)?.nome ?? 'Cliente removido' : 'Balcão'}</td>
-                    <td className="px-3 py-2">{formaPagamentoLabel(venda.formaPagamento)}</td>
-                    <td className="px-3 py-2 text-right font-semibold">{formatCents(venda.total)}</td>
+          <>
+            <p className="mb-2 text-xs text-slate-400">
+              Exibindo {(paginaAtual - 1) * 10 + 1}–{Math.min(paginaAtual * 10, vendasFiltradas.length)} de {vendasFiltradas.length} venda(s). 10 por página.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <th className="px-3 py-2">Número</th>
+                    <th className="px-3 py-2">Data</th>
+                    <th className="px-3 py-2">Cliente</th>
+                    <th className="px-3 py-2">Vendedor</th>
+                    <th className="px-3 py-2">Pagamento</th>
+                    <th className="px-3 py-2 text-right">Total</th>
+                    <th className="px-3 py-2 text-right">Comprovante</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {vendasPagina.map((venda) => (
+                    <tr key={venda.id} className="border-b border-slate-100 last:border-0">
+                      <td className="px-3 py-2 font-medium text-slate-700">{venda.numero}</td>
+                      <td className="px-3 py-2">{formatDateBR(venda.data)}</td>
+                      <td className="px-3 py-2">{venda.clienteId ? clienteById(venda.clienteId)?.nome ?? 'Cliente removido' : 'Balcão'}</td>
+                      <td className="px-3 py-2">{venda.vendedorNome || 'Não identificado'}</td>
+                      <td className="px-3 py-2">{formaPagamentoLabel(venda.formaPagamento)}</td>
+                      <td className="px-3 py-2 text-right font-semibold">{formatCents(venda.total)}</td>
+                      <td className="px-3 py-2 text-right">
+                        <Button type="button" variant="secondary" small onClick={() => imprimirVenda(venda)}>
+                          <span aria-hidden="true">🖨️ </span>Imprimir
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                small
+                disabled={paginaAtual <= 1}
+                onClick={() => setPaginaVendas((atual) => Math.max(1, atual - 1))}
+              >
+                Anterior
+              </Button>
+              <span className="text-xs text-slate-500">Página {paginaAtual} de {totalPaginas}</span>
+              <Button
+                type="button"
+                variant="secondary"
+                small
+                disabled={paginaAtual >= totalPaginas}
+                onClick={() => setPaginaVendas((atual) => Math.min(totalPaginas, atual + 1))}
+              >
+                Próxima
+              </Button>
+            </div>
+          </>
         )}
       </Card>
     </div>

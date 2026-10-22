@@ -55,7 +55,7 @@ export default function Perfil() {
     <div>
       <PageHeader
         title="Perfil da Empresa"
-        subtitle="Estes dados aparecem nos PDFs de orçamento e fatura"
+        subtitle="Os dados da empresa aparecem nos documentos; a Inscrição Estadual também sai no comprovante térmico."
       />
 
       <form onSubmit={handleSubmit}>
@@ -75,6 +75,13 @@ export default function Perfil() {
                   className={inputClass}
                   value={empresa.cnpj}
                   onChange={(e) => set({ cnpj: maskCpfCnpj(e.target.value) })}
+                />
+              </Field>
+              <Field label="Inscrição Estadual">
+                <input
+                  className={inputClass}
+                  value={empresa.inscricaoEstadual}
+                  onChange={(e) => set({ inscricaoEstadual: e.target.value })}
                 />
               </Field>
               <Field label="Telefone / WhatsApp">

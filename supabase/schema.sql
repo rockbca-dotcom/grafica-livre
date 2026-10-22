@@ -93,6 +93,8 @@ create table if not exists public.vendas_rapidas (
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   numero text not null,
   cliente_id uuid,
+  vendedor_id uuid,
+  vendedor_nome text not null default '',
   data date not null,
   forma_pagamento text not null default 'pix',
   itens jsonb not null default '[]',
@@ -134,6 +136,7 @@ create table if not exists public.empresa (
   user_id uuid primary key default auth.uid() references auth.users (id) on delete cascade,
   nome text not null default '',
   cnpj text not null default '',
+  inscricao_estadual text not null default '',
   email text not null default '',
   telefone text not null default '',
   website text not null default '',
@@ -270,6 +273,9 @@ alter table public.workspace_members add column if not exists full_name text not
 alter table public.workspace_members add column if not exists birth_date date;
 alter table public.workspace_members add column if not exists job_title text not null default '';
 alter table public.itens add column if not exists favorito boolean not null default false;
+alter table public.vendas_rapidas add column if not exists vendedor_id uuid;
+alter table public.vendas_rapidas add column if not exists vendedor_nome text not null default '';
+alter table public.empresa add column if not exists inscricao_estadual text not null default '';
 alter table public.clientes add column if not exists numero text not null default '';
 alter table public.clientes add column if not exists complemento text not null default '';
 -- Imposto por documento e desconto
@@ -363,6 +369,7 @@ create policy "vendas_rapidas_member_insert" on public.vendas_rapidas
   with check (
     user_id = (select public.current_workspace_owner_id())
     and (select public.current_workspace_role()) = 'member'
+    and vendedor_id = (select auth.uid())
   );
 create policy "vendas_rapidas_member_read" on public.vendas_rapidas
   for select to authenticated

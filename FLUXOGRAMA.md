@@ -1,7 +1,7 @@
 # Fluxo do Gráfica Livre
 
 **Revisão:** 22/10/2026
-**Estado:** FIN-01, PDV-01, HIST-01 e PDV-02 implementados no código. Histórico de cliente e lista conferidos no modo local; esse modo não simula `member`. Migrações e publicação online pendentes.
+**Estado:** FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05 e EMP-01 implementados no código. Lint, build e conferência manual do PDV concluídos localmente; o modo local não simula `member` nem autoria autenticada. Aplicar migração, validar RLS/autoria online e publicar ainda estão pendentes.
 **Regras detalhadas:** [PRD.md](PRD.md). Este desenho explica o caminho, não substitui os critérios de aceite.
 
 ## 1. Abrir o sistema e decidir o acesso
@@ -35,17 +35,36 @@ flowchart TD
     CLIENTE -->|Não| SEM[Venda de balcão sem cliente]
     ASSOCIAR --> ADD[Montar carrinho e registrar venda]
     SEM --> ADD
-    ADD --> ROLE{Modo e papel}
+    ADD --> USER[Obter vendedor da sessão, se houver login]
+    USER --> ROLE{Modo e papel}
     ROLE -->|Local| LOCAL[Salvar no navegador; sem separar usuários]
     ROLE -->|Supabase: owner| OWNER[Inserir e consultar vendas]
     ROLE -->|Supabase: member| MEMBER[Inserir venda; consultar a lista de vendas da gráfica]
     MEMBER --> TOTAL[Ver total do carrinho para concluir]
     ASSOCIAR --> HIST[Venda fica disponível no histórico desse cliente]
+    OWNER --> RECEIPT[Salvar venda e abrir comprovante 88 mm]
+    MEMBER --> RECEIPT
+    LOCAL --> RECEIPT
+    RECEIPT --> PRINT[Diálogo de impressão do navegador]
 ```
 
-No Supabase, a RLS permite ao colaborador consultar as vendas rápidas do próprio espaço, inclusive as vendas sem cliente; não permite alteração ou exclusão. No modo local, o navegador não identifica quem está usando o sistema.
+No Supabase, a RLS permite ao colaborador consultar as vendas rápidas do próprio espaço, inclusive as vendas sem cliente; não permite alteração ou exclusão. A inserção exige que o ID do vendedor corresponda à sessão autenticada. No modo local, o navegador não identifica quem está usando o sistema, então a venda fica “Não identificado”. Cancelar a janela de impressão não desfaz o registro.
 
-### 1.2 Consultar pedidos de um cliente
+### 1.2 Buscar e reimprimir uma venda
+
+```mermaid
+flowchart TD
+    LISTA[Lista completa de vendas rápidas] --> PESQ[Pesquisar número, data, cliente/balcão, vendedor ou pagamento]
+    PESQ --> RESULT[Ordenar da mais recente para a mais antiga]
+    RESULT --> PAGE[Mostrar 10 vendas por página]
+    PAGE --> NAV{Selecionar ação}
+    NAV -->|Anterior / próxima| PAGE
+    NAV -->|Imprimir| REC[Montar comprovante da venda escolhida]
+    REC --> DADOS[Usar dados atuais do Perfil da Empresa]
+    DADOS --> IMP[Diálogo de impressão do navegador]
+```
+
+### 1.3 Consultar pedidos de um cliente
 
 ```mermaid
 flowchart TD
@@ -123,9 +142,11 @@ Marcar um item como favorito não altera preço nem histórico. Se a equipe aind
 4. O valor e a quantidade da venda continuam no carrinho para finalizar o atendimento.
 5. Para um serviço que exige proposta, crie um orçamento, depois converta em fatura e acompanhe o card na Produção.
 6. Registre recebimentos na própria fatura. O colaborador não usa Contas a Receber; essa tela e Contas a Pagar ficam para o proprietário.
-7. No PDV, o colaborador pode consultar as oito vendas rápidas mais recentes, incluindo as de balcão sem cliente e os totais individuais. Essa lista não é um painel de indicadores.
-8. Na lista de Clientes, clique em **Histórico** para consultar orçamentos e vendas associados ao cliente. Ao registrar uma venda no PDV, selecione o cliente para que ela apareça nesse histórico individual.
-9. O Dashboard de colaborador mostra o acompanhamento operacional sem entradas, despesas ou saldos financeiros consolidados.
+7. No PDV, proprietário e colaborador pesquisam a lista completa de vendas rápidas e consultam 10 registros por página, incluindo os de balcão; cada registro mostra vendedor e tem botão **Imprimir**.
+8. Ao concluir uma venda, o comprovante não fiscal de 88 mm abre para impressão. A pessoa escolhe a impressora no navegador; cancelar a impressão mantém a venda salva.
+9. Preencha a Inscrição Estadual em **Perfil da Empresa** para que ela apareça no comprovante.
+10. Na lista de Clientes, clique em **Histórico** para consultar orçamentos e vendas associados ao cliente. Ao registrar uma venda no PDV, selecione o cliente para que ela apareça nesse histórico individual.
+11. O Dashboard de colaborador mostra o acompanhamento operacional sem entradas, despesas ou saldos financeiros consolidados.
 
 ## 6. Limites do modo local e da publicação
 

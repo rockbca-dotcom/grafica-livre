@@ -424,6 +424,7 @@ async function executeAction(
   supabase: ReturnType<typeof createClient>,
   name: string,
   args: Record<string, unknown>,
+  actor: { id: string; email: string; metadata: Record<string, unknown> },
 ) {
   if (!ACTION_NAMES.has(name)) throw new Error('Ação não autorizada.')
   const { data: workspaceOwnerId, error: ownerError } = await supabase.rpc('current_workspace_owner_id')
@@ -517,11 +518,21 @@ async function executeAction(
   const data = actionDate(args.data)
   const id = crypto.randomUUID()
   const sufixo = id.replaceAll('-', '').slice(0, 6).toUpperCase()
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('full_name')
+    .eq('user_id', actor.id)
+    .maybeSingle()
+  const vendedorNome = String(
+    membership?.full_name || actor.metadata.full_name || actor.metadata.name || actor.email,
+  ).trim()
   const { error } = await supabase.from('vendas_rapidas').insert({
     id,
     user_id: workspaceOwnerId,
     numero: `PDV-${data.replaceAll('-', '')}-${sufixo}`,
     cliente_id: clienteId || null,
+    vendedor_id: actor.id,
+    vendedor_nome: vendedorNome,
     data,
     forma_pagamento: asText(args.forma_pagamento) || 'pix',
     itens: normalized.items.map((item) => ({
@@ -620,7 +631,11 @@ Deno.serve(async (req) => {
     const args = asObject(confirmation.args)
     if (!ACTION_NAMES.has(name)) return json({ erro: 'Ação não autorizada.' }, 403, req)
     try {
-      const result = await executeAction(supabase, name, args)
+      const result = await executeAction(supabase, name, args, {
+        id: userData.user.id,
+        email: userData.user.email ?? '',
+        metadata: userData.user.user_metadata ?? {},
+      })
       return json({ message: result.message, executed: true }, 200, req)
     } catch (error) {
       return json({

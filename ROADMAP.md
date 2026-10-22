@@ -1,7 +1,7 @@
 # ROADMAP — pedidos do cliente
 
-**Estado:** FIN-01, PDV-01, HIST-01 e PDV-02 implementados no código. O histórico e a lista do PDV foram conferidos manualmente no modo local; esse modo não simula o papel `member`. Aplicação das migrações pendentes no Supabase e publicação do frontend continuam necessárias para ativar a versão online.
-**Fonte:** conversa exportada do WhatsApp em 14/10/2026 e nova mensagem do cliente em 22/10/2026.
+**Estado:** FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05 e EMP-01 implementados no código. Lint, build e conferência manual local concluídos; teste de autoria/RLS no Supabase, aplicação das migrações pendentes e publicação ainda são necessários para ativar a versão online.
+**Fonte:** conversa exportada do WhatsApp em 14/10/2026 e solicitações do cliente registradas em 22/10/2026.
 **Detalhamento e decisões de negócio:** [PRD.md](PRD.md).
 
 ## Ordem de execução
@@ -66,7 +66,7 @@
 
 ### Etapa 5 — Liberar a lista de vendas rápidas para colaboradores
 
-- [x] Mostrar no PDV para `member` as oito vendas rápidas mais recentes e o contador total.
+- [x] Mostrar para `member` a lista completa paginada das vendas rápidas, com contador total e 10 vendas por página.
 - [x] Exibir número, data, cliente ou balcão, forma de pagamento e total, inclusive nas vendas sem cliente.
 - [x] Permitir leitura das linhas de vendas rápidas do próprio espaço pela RLS, sem autorizar edição ou exclusão para `member`.
 - [x] Conferir no navegador local a lista, as colunas e o total individual da venda exibida.
@@ -77,14 +77,29 @@
 
 **Aceite:** critérios de `HIST-01` em [PRD.md](PRD.md).
 
+### Etapa 6 — Comprovante e consulta de vendas rápidas — implementação local concluída
+
+- [x] Adicionar Inscrição Estadual opcional ao Perfil da Empresa e persistir nos modos local e Supabase.
+- [x] Registrar o ID e o nome do vendedor nas vendas feitas por sessão autenticada; manter vendas antigas e o modo local sem identificação presumida.
+- [x] Criar comprovante não fiscal com largura de 88 mm e abrir a impressão depois de salvar uma venda.
+- [x] Adicionar botão para reimprimir cada venda na lista.
+- [x] Pesquisar vendas por número, data, cliente/balcão, vendedor e pagamento.
+- [x] Mostrar 10 vendas por página, mais recentes primeiro, e reiniciar a página ao pesquisar.
+- [x] Atualizar PRD, README, fluxograma, arquitetura, guia de uso, publicação e auditoria de acordo com o código e os testes locais.
+- [ ] Aplicar a migração `20261022140000_comprovante_venda_rapida.sql`, validar autoria/RLS com `owner` e `member` no Supabase online e publicar o frontend e a Edge Function `assistente-ia`.
+
+**Aceite:** critérios de `PDV-03`, `PDV-04`, `PDV-05` e `EMP-01` em [PRD.md](PRD.md).
+
 ## Dependências resumidas
 
 ```text
 Confirmações do cliente
         ├──> Permissões financeiras e consulta das vendas rápidas conforme FIN-01/PDV-02
         ├──> Favoritos compartilhados no catálogo e no PDV
-        └──> Histórico de pedidos por cliente para owner/member
-                 └──> Implementação concluída; validação em nuvem e publicação pendentes
+        ├──> Histórico de pedidos por cliente para owner/member
+        │        └──> Implementação local concluída; validação em nuvem e publicação pendentes
+        └──> Comprovante térmico, busca/paginação, Inscrição Estadual e vendedor
+                 └──> Implementação local concluída; validação em nuvem e publicação pendentes
 ```
 
 ## O que não entra neste roteiro

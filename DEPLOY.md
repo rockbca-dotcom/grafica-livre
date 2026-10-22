@@ -68,11 +68,11 @@ Salve.
 
 Todos os colaboradores cadastrados usam o mesmo link e trabalham nos mesmos dados da gráfica. O proprietário pode revogar e reativar acessos na tela **Equipe**. O sistema cria as contas diretamente no Supabase e não depende do envio de convites por e-mail.
 
-O código da atualização restringe as telas de gestão financeira a `owner`, protege `contas_pagar`, salva favoritos compartilhados, mostra o histórico por cliente e libera para `member` a lista das oito vendas rápidas mais recentes no PDV, inclusive vendas sem cliente e com total individual. Em ambiente existente, aplique as migrações pendentes no banco e publique a versão atual do frontend antes de considerar essas regras ativas online. A leitura não autoriza que colaboradores alterem ou excluam vendas.
+O código da atualização restringe as telas de gestão financeira a `owner`, protege `contas_pagar`, salva favoritos compartilhados, mostra o histórico por cliente e libera a consulta das vendas rápidas a `member`. A lista permite busca, mostra 10 vendas por página, exibe o vendedor e imprime/reimprime comprovantes não fiscais de 88 mm. Em ambiente existente, aplique as migrações pendentes e publique o frontend e a função `assistente-ia` atualizada antes de considerar esses recursos ativos online. A leitura não autoriza que colaboradores alterem ou excluam vendas.
 
 ### Migrações em uma instalação existente
 
-Se o sistema já está em produção, faça um backup externo e aplique os arquivos ainda não executados em `supabase/migrations/` em ordem temporal no **SQL Editor** antes de publicar o frontend. O histórico deste repositório inclui `20261001212303_multiusuarios.sql`, `20261001213922_proximo_numero_search_path.sql`, `20261001222753_cadastro_manual_colaboradores.sql`, `20261015120000_favoritos_e_acesso_financeiro.sql`, `20261022120000_historico_pedidos_cliente.sql` e `20261022130000_vendas_rapidas_member_history.sql`. A migração de 15/10 adiciona `itens.favorito`, expõe o papel ativo da sessão e restringe `contas_pagar`; as duas migrações de 22/10 habilitam o histórico de pedidos e a leitura das vendas rápidas do espaço por `member`, inclusive vendas sem cliente, sem liberar alteração ou exclusão. Execute apenas migrações ainda não aplicadas, uma por vez, confira o resultado e não repita um arquivo que terminou com erro sem antes conferir o estado do banco.
+Se o sistema já está em produção, faça um backup externo e aplique os arquivos ainda não executados em `supabase/migrations/` em ordem temporal no **SQL Editor** antes de publicar o frontend. O histórico deste repositório inclui `20261001212303_multiusuarios.sql`, `20261001213922_proximo_numero_search_path.sql`, `20261001222753_cadastro_manual_colaboradores.sql`, `20261015120000_favoritos_e_acesso_financeiro.sql`, `20261022120000_historico_pedidos_cliente.sql`, `20261022130000_vendas_rapidas_member_history.sql` e `20261022140000_comprovante_venda_rapida.sql`. A última migração adiciona `empresa.inscricao_estadual`, campos de vendedor nas vendas rápidas e exige que a inserção do colaborador use o próprio ID autenticado. Os campos novos são aditivos; as vendas antigas continuam sem vendedor identificado. Execute apenas migrações ainda não aplicadas, uma por vez, confira o resultado e não repita um arquivo que terminou com erro sem antes conferir o estado do banco.
 
 ### Funções de servidor
 
@@ -82,7 +82,7 @@ Publique apenas as funções que a empresa utilizar. Mantenha validação de JWT
 |---|---|---|
 | `gerenciar-colaboradores` | Criar, revogar ou reativar acesso pela tela Equipe. | `APP_URL` deve apontar para o site publicado. `APP_ALLOWED_ORIGINS` recebe domínios permitidos separados por vírgula. O Supabase injeta `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY`; a chave de serviço nunca vai para Vercel ou navegador. |
 | `enviar-email` | Mandar orçamento/fatura em PDF por e-mail. | Secret `RESEND_API_KEY`; opcional `EMAIL_REMETENTE`. O remetente precisa ser autorizado/verificado no Resend para entregar a destinatários externos. |
-| `assistente-ia` | Responder perguntas sobre os dados e propor cadastros; resumos financeiros e histórico de vendas rápidas ficam restritos ao proprietário. | Secret `NVIDIA_API_KEY`. Mensagens e resultados das consultas são enviados à NVIDIA; só ative depois de aprovar isso na política da empresa. |
+| `assistente-ia` | Responder perguntas sobre os dados e propor cadastros; resumos financeiros e histórico de vendas rápidas ficam restritos ao proprietário. Vendas confirmadas pelo assistente registram o usuário autenticado como vendedor. | Secret `NVIDIA_API_KEY`. Mensagens e resultados das consultas são enviados à NVIDIA; só ative depois de aprovar isso na política da empresa. |
 
 Os segredos das funções não devem receber prefixo `VITE_`. Sem o secret ou a função correspondente, o recurso opcional não estará disponível.
 
@@ -92,7 +92,7 @@ Os segredos das funções não devem receber prefixo `VITE_`. Sem o secret ou a 
 2. Leia a versão e aplique as migrações necessárias, uma por vez.
 3. Publique/atualize as Edge Functions usadas e confira os secrets.
 4. Publique o frontend com as variáveis `VITE_*`.
-5. Teste login, cliente e o histórico de um cliente, lista de últimas vendas rápidas (com e sem cliente e com total), venda no PDV, produto, orçamento, PDF, fatura, pagamento e produção. Teste também que uma sessão `member` consegue ler a lista, mas não alterar ou excluir vendas nem abrir os indicadores e relatórios restritos.
+5. Teste login, cliente e o histórico de um cliente; pesquise vendas rápidas por número, cliente, vendedor e pagamento; confira 10 registros por página; registre uma venda e valide vendedor, comprovante de 88 mm e botão de reimpressão. Teste também que `member` consegue consultar as vendas, mas não alterar/excluir registros nem abrir os indicadores e relatórios restritos.
 6. Registre data e responsável pela publicação sem incluir valores de secrets.
 
 O app faz exportação manual; ele não agenda nem confirma backup automático no Supabase. A importação JSON substitui os dados atuais e tem os riscos descritos em AUD-03 de [AUDITORIA.md](AUDITORIA.md).

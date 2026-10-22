@@ -28,7 +28,7 @@ Sem `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`, o sistema usa modo local. El
 
 Faça nesta ordem:
 
-1. **Perfil da Empresa:** cadastre nome, documento, endereço, telefone, e-mail, PIX e logo. Esses dados podem aparecer nos PDFs.
+1. **Perfil da Empresa:** cadastre nome, CNPJ, Inscrição Estadual, endereço, telefone, e-mail, PIX e logo. A Inscrição Estadual é opcional; quando preenchida, aparece no comprovante térmico.
 2. **Produtos:** cadastre serviços e produtos, preço por unidade e/ou por m², e descrição. Marque a estrela dos itens que a equipe vende com frequência. O PDV usa primeiro o preço unitário; sem favoritos, ele mostra o catálogo inteiro.
 3. **Clientes:** cadastre nome, documento e meios de contato.
 4. **Orçamentos:** selecione um cliente, adicione itens, confira imposto, frete, desconto, prazo e termos. Gere o PDF ou compartilhe.
@@ -45,14 +45,14 @@ Faça nesta ordem:
 | Dashboard | O proprietário vê entradas, saldos, despesas e vencimentos. O colaborador vê o funil e a quantidade de orçamentos, sem indicadores financeiros consolidados. |
 | Orçamentos | Criar/editar, pesquisar, filtrar, duplicar, gerar PDF, enviar e-mail/WhatsApp e converter em fatura. |
 | Faturas | Acompanhar cobrança, gerar PDF/guia, PIX, enviar e-mail/WhatsApp, registrar recebimento e excluir. |
-| PDV — Venda rápida | Registrar venda sem orçamento. Na abertura, aparecem os favoritos compartilhados; se não houver nenhum, aparecem todos os produtos. A busca procura o catálogo inteiro. Escolha produtos, quantidades e pagamento; o carrinho mostra o total para finalizar a venda. Abaixo do caixa, `owner` e `member` consultam as oito últimas vendas com número, data, cliente ou balcão, forma de pagamento e total individual. |
+| PDV — Venda rápida | Registrar venda sem orçamento. Na abertura, aparecem os favoritos compartilhados; se não houver nenhum, aparecem todos os produtos. A busca do catálogo procura todos os itens. Depois de registrar a venda, abre o comprovante não fiscal de 88 mm para impressão. A lista abaixo permite pesquisar por número, data, cliente/balcão, vendedor ou pagamento, mostra 10 vendas por página e tem botão de reimpressão em cada registro. |
 | Produção | Acompanhar e mover serviços por cinco etapas. Cards vinculados à fatura exibem o cliente e os dados do trabalho. |
 | Contas a Receber | Proprietário: ver saldos, vencimentos e preparar cobrança. Colaborador: use Faturas para consultar valores e registrar/remover pagamentos. |
 | Contas a Pagar | Proprietário cadastra despesa e vencimento, marca como paga, edita ou exclui. |
 | Clientes / Produtos | Manter os cadastros usados por orçamento, fatura e PDV. |
 | Histórico de pedidos | Em Clientes, clicar em **Histórico**. A lista mostra data, tipo, número, itens, total e status, do mais recente ao mais antigo. Para a venda direta aparecer, selecione o cliente no PDV antes de registrar; uma venda de balcão sem cliente não pode ser associada depois automaticamente. |
 | Relatórios | Proprietário consulta vendas, fluxo de caixa e resultado por cliente; exporta CSV. |
-| Perfil da Empresa | Editar os dados usados nos documentos e na cobrança PIX. |
+| Perfil da Empresa | Editar os dados usados nos documentos e na cobrança PIX, incluindo Inscrição Estadual opcional para o comprovante térmico. |
 | Equipe | No modo nuvem, proprietário cria e administra os acessos dos colaboradores. |
 | Configurações | Exportar/importar JSON e verificar se está no modo local ou nuvem. |
 
@@ -66,6 +66,17 @@ O modo nuvem precisa do Supabase. Há dois papéis no código:
 O proprietário cria contas pela tela Equipe. A senha inicial é definida no cadastro e deve ser entregue por canal seguro. A criação exige nome, e-mail, data de nascimento, função e senha. O acesso fica ativo imediatamente. O proprietário também pode revogar ou reativar uma conta.
 
 No modo Supabase, apenas `owner` abre Contas a Receber, Contas a Pagar e Relatórios. A tabela de despesas também é restrita no banco. O colaborador mantém acesso a Faturas, valores e pagamentos para executar o atendimento; pode consultar as últimas vendas rápidas no PDV, inclusive as de balcão sem cliente, e o histórico por cliente em **Clientes → Histórico**. Essa consulta não permite alterar ou excluir vendas. No modo local, não há login nem controle de papel; quem usa o mesmo navegador vê os mesmos dados.
+
+Nas vendas rápidas feitas com login Supabase, a venda grava o nome e o identificador da pessoa conectada. O nome aparece na lista e no comprovante. Vendas antigas e vendas do modo local mostram “Não identificado”, pois o sistema não tem informação confiável para atribuí-las.
+
+### Imprimir o comprovante térmico
+
+1. Finalize a venda no PDV. Depois de salva, o sistema abre uma janela com o comprovante e chama a impressão.
+2. No diálogo do navegador, selecione a impressora térmica e o papel/largura de 88 mm nas preferências da impressora. Se a lista tiver uma opção de escala, use 100% e retire margens extras.
+3. Confirme a impressão ou cancele. Cancelar não desfaz a venda.
+4. Para imprimir depois, localize a venda pela busca na lista do PDV e clique em **Imprimir**. Use **Anterior** e **Próxima** para navegar pelas páginas de 10 vendas.
+
+Se o navegador bloquear a janela automática, permita pop-ups para o endereço do sistema e use o botão **Imprimir** da venda já registrada.
 
 ## Backup, exportação e restauração
 
@@ -90,5 +101,5 @@ O assistente é opcional. A empresa deve autorizar o uso de serviços externos p
 
 - Não emite nota fiscal e não substitui ERP fiscal.
 - Não controla estoque, compras, conciliação bancária ou caixa separado por operador.
-- As migrações `20261015120000_favoritos_e_acesso_financeiro.sql`, `20261022120000_historico_pedidos_cliente.sql` e `20261022130000_vendas_rapidas_member_history.sql` precisam ser aplicadas ao banco Supabase existente para salvar favoritos, restringir Contas a Pagar e habilitar as consultas de venda por cliente e a lista do PDV para colaboradores.
+- As migrações `20261015120000_favoritos_e_acesso_financeiro.sql`, `20261022120000_historico_pedidos_cliente.sql`, `20261022130000_vendas_rapidas_member_history.sql` e `20261022140000_comprovante_venda_rapida.sql` precisam ser aplicadas ao banco Supabase existente para ativar todas as regras descritas. Publique também a versão atualizada da função `assistente-ia` para salvar a autoria nas vendas criadas pelo assistente.
 - Código no repositório não confirma que o frontend ou o banco online já foram publicados; veja [ROADMAP.md](ROADMAP.md).

@@ -126,6 +126,8 @@ export interface VendaRapida {
   id: string
   numero: string
   clienteId: string | null
+  vendedorId: string | null
+  vendedorNome: string
   data: string // yyyy-mm-dd
   formaPagamento: FormaPagamento
   itens: VendaRapidaItem[]
@@ -149,6 +151,7 @@ export interface ContaPagar {
 export interface Empresa {
   nome: string
   cnpj: string
+  inscricaoEstadual: string
   email: string
   telefone: string
   website: string
@@ -205,6 +208,7 @@ export interface Database {
 export const EMPRESA_PADRAO: Empresa = {
   nome: 'Minha Gráfica',
   cnpj: '',
+  inscricaoEstadual: '',
   email: '',
   telefone: '',
   website: '',

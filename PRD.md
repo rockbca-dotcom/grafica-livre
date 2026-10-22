@@ -1,8 +1,8 @@
 # PRD — Gráfica Livre
 
-**Status:** FIN-01, PDV-01, HIST-01 e PDV-02 implementados no código. O histórico e a lista do PDV foram conferidos manualmente no modo local; as migrações Supabase, o teste da política RLS com `member` e a publicação online estão pendentes.
+**Status:** FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05 e EMP-01 implementados no código. Lint, build e teste manual local concluídos; aplicar a nova migração e validar autoria/RLS no Supabase online ainda está pendente.
 **Data da análise:** 14/10/2026; decisões confirmadas em 15/10/2026 e 22/10/2026.
-**Fonte principal:** exportação da conversa do WhatsApp “Sistema Gráfica”, incluindo texto, imagens e um vídeo com áudio; nova mensagem do cliente recebida em 22/10/2026.
+**Fonte principal:** exportação da conversa do WhatsApp “Sistema Gráfica”, incluindo texto, imagens e um vídeo com áudio; solicitações adicionais sobre histórico, vendas rápidas e comprovante térmico recebidas em 22/10/2026.
 
 ## 1. Em uma frase
 
@@ -14,6 +14,9 @@ O Gráfica Livre ajuda uma gráfica a registrar clientes e produtos, vender, or�
 2. O catálogo do PDV está crescendo. A equipe precisa encontrar os produtos mais vendidos rapidamente sem perder a possibilidade de localizar o restante.
 3. A equipe precisa consultar, por cliente, os orçamentos e as vendas diretas já feitas para ele.
 4. Colaboradores precisam consultar a lista das últimas vendas rápidas, inclusive vendas de balcão sem cliente.
+5. A equipe precisa imprimir um comprovante estreito após a venda e reimprimi-lo pela lista.
+6. A lista de vendas rápidas precisa de busca e de 10 vendas por página.
+7. O comprovante precisa mostrar a Inscrição Estadual da gráfica e quem registrou a venda.
 
 ## 3. Comportamento anterior à atualização
 
@@ -36,7 +39,7 @@ Esta seção registra o comportamento existente para que uma atualização não 
 | Conversão | Ao faturar um orçamento, cria uma fatura `pendente`, muda o orçamento para `faturado` e cria card de produção na etapa `Arte`. |
 | Fatura | Também pode ser cadastrada diretamente. Tem emissão, vencimento, forma de pagamento, itens e totais. Atraso é calculado com base no vencimento. |
 | Recebimento | Pagamentos são registros separados. A soma dos pagamentos altera o status da fatura para `pendente`, `parcial` ou `paga`; uma fatura vencida e ainda pendente/parcial aparece como atrasada. |
-| PDV | Registra venda simples de balcão direto como venda rápida. Ela não gera fatura nem card de produção. Cliente é opcional; permite forma de pagamento, observação e item avulso. |
+| PDV | Registra venda simples de balcão direto como venda rápida. Ela não gera fatura nem card de produção. Cliente é opcional; permite forma de pagamento, observação e item avulso. A lista permite busca, paginação de 10 vendas e impressão de comprovante térmico não fiscal. |
 | Produção | Cards caminham por Arte → Impressão → Acabamento → Pronto → Entregue. A tela também pode criar cards manualmente. |
 | Contas a pagar | Cada despesa tem descrição, categoria, fornecedor, vencimento, valor e status pendente/paga. Não há controle de parcelas nesta versão. |
 | Exclusão de cliente | Excluir cliente não apaga orçamentos ou faturas associados; o documento histórico permanece. |
@@ -52,6 +55,8 @@ O inventário de módulos, entidades e integrações está em [ARQUITETURA.md](A
 | Vídeo de tela com áudio, 55 segundos, mostrando o PDV | O catálogo demonstrado tem 51 itens e continua crescendo. O áudio pede destacar/favoritar os produtos que mais saem e encontrar os demais pela pesquisa. | Média: o objetivo é claro; alguns trechos da fala não permitem determinar todos os detalhes da interação. |
 | Imagens de orçamento, cadastro de cliente, equipe e ações do orçamento | Contextualizam telas usadas pelo cliente. Não há texto que confirme uma alteração específica nessas telas. | Baixa como pedido; são referências visuais. |
 | Captura e pedido para liberar a lista de vendas rápidas | A equipe deve consultar a lista de últimas vendas do PDV, inclusive o total de cada registro. | Alta: pedido explícito do usuário em 22/10/2026. |
+| Mensagens e imagens de referência da impressão térmica e da lista | Imprimir após salvar uma venda, reimprimir pela lista, usar papel de 88 mm, pesquisar e exibir 10 vendas por página. | Alta: decisões expressas pelo usuário em 22/10/2026; as imagens orientam o formato visual. |
+| Decisões sobre cadastro e autoria | Adicionar Inscrição Estadual ao perfil da gráfica e identificar quem registrou cada nova venda. | Alta: decisões expressas pelo usuário em 22/10/2026. |
 
 Os trechos do áudio que mencionam preço/descrição e a forma exata de ocultar os itens são ambíguos. Não os transformamos em regras adicionais. A pesquisa já existe hoje; o pedido é reduzir a dificuldade causada pela lista extensa.
 
@@ -134,13 +139,78 @@ Não há um papel `admin` separado no código atual. Esta atualização deve usa
 
 **Critérios de aceite:**
 
-- `member` vê no PDV o contador total e as oito vendas rápidas mais recentes, em ordem decrescente, inclusive vendas de balcão sem cliente.
+- `member` vê no PDV o contador de vendas e consulta a lista paginada das vendas rápidas mais recentes, inclusive vendas de balcão sem cliente; PDV-04 define o limite de 10 por página.
 - As colunas visíveis para ambos os papéis são número, data, cliente (ou “Balcão”), forma de pagamento e total.
 - A liberação é somente para consulta na interface; `member` não pode editar ou excluir vendas rápidas existentes. O registro de novas vendas permanece disponível.
 - Indicadores do Dashboard/PDV, Contas a Pagar, Contas a Receber e Relatórios continuam restritos conforme FIN-01.
 - No Supabase, `member` pode ler os registros de venda rápida do seu espaço (`user_id` do proprietário); a política não libera registros de outras gráficas nem operações de escrita além da inserção já permitida.
 
 **Impacto técnico de acesso:** a política RLS concede leitura das linhas completas de `vendas_rapidas` ao membro da gráfica. A tela mostra apenas o resumo acima, mas campos como itens e observações também ficam acessíveis pela API autenticada. A permissão não é limitada a vendas associadas a cliente.
+
+### PDV-03 — Imprimir comprovante térmico da venda rápida
+
+**Prioridade:** P1
+
+**Origem:** solicitação do cliente com exemplos de comprovante e botão de impressão, em 22/10/2026.
+
+**Regra:** depois que a venda for salva, abrir o comprovante em formato de 88 mm para impressão; cada linha da lista também terá uma ação de reimpressão.
+
+**Critérios de aceite:**
+
+- O comprovante tem largura de 88 mm e apresenta a gráfica, CNPJ e Inscrição Estadual quando cadastrados, data, número, indicação “CUPOM NÃO FISCAL”, cliente ou consumidor, vendedor, itens, quantidades, preços, total e forma de pagamento.
+- Depois de salvar uma venda pelo PDV, o sistema abre a janela do comprovante e solicita a impressão pelo navegador.
+- A lista de vendas rápidas tem um botão para imprimir novamente o comprovante daquela venda.
+- Cancelar a janela de impressão não cancela nem apaga a venda já registrada.
+- A impressão usa o diálogo e o driver do navegador/computador; não controla a impressora diretamente nem emite documento fiscal.
+- Se o navegador bloquear a janela, a venda continua registrada e a pessoa recebe orientação para permitir pop-ups ou usar o botão de reimpressão.
+- Na reimpressão, os dados comerciais são da venda salva e os dados cadastrais da gráfica são os atuais do Perfil da Empresa.
+
+### PDV-04 — Pesquisar e paginar a lista de vendas rápidas
+
+**Prioridade:** P1
+
+**Origem:** decisão do cliente em 22/10/2026.
+
+**Regra:** permitir pesquisa na lista completa, mostrando 10 vendas por página, mais recentes primeiro.
+
+**Critérios de aceite:**
+
+- A pesquisa encontra pelo número, data, cliente/balcão, vendedor ou forma de pagamento, sem diferenciar maiúsculas, minúsculas ou acentos.
+- São exibidas no máximo 10 vendas por página, com controles anterior/próxima e indicação da página e da quantidade encontrada.
+- Uma pesquisa nova retorna à primeira página; resultado vazio tem mensagem clara.
+- O botão de impressão aparece em cada venda, independentemente da página.
+- A pesquisa não altera os dados nem as permissões atuais de consulta de `owner` e `member`.
+
+### PDV-05 — Registrar o responsável pela venda
+
+**Prioridade:** P1
+
+**Origem:** decisão do cliente em 22/10/2026.
+
+**Regra:** salvar o identificador e uma cópia do nome da pessoa autenticada quando ela registrar uma venda rápida no modo Supabase.
+
+**Critérios de aceite:**
+
+- O nome vem do cadastro de equipe da própria pessoa; se estiver vazio, usa o nome/e-mail da sessão como alternativa.
+- O vendedor é gravado junto da venda, mostrado na lista e impresso no comprovante.
+- A inserção por `member` só aceita `vendedor_id` igual ao usuário autenticado.
+- Vendas antigas sem autoria continuam disponíveis e exibem “Não identificado”; nenhuma pessoa é atribuída por suposição.
+- No modo local não há identidade autenticada. A venda continua funcionando e exibe “Não identificado”.
+- O identificador é guardado sem chave estrangeira para preservar o registro se a conta do colaborador for removida; o nome salvo é a referência histórica visível.
+
+### EMP-01 — Cadastrar Inscrição Estadual da gráfica
+
+**Prioridade:** P1
+
+**Origem:** decisão do cliente em 22/10/2026 para compor o comprovante térmico.
+
+**Regra:** adicionar campo opcional de Inscrição Estadual no Perfil da Empresa e exibi-lo no comprovante quando preenchido.
+
+**Critérios de aceite:**
+
+- O valor pode ser digitado e salvo sem máscara fixa nem obrigatoriedade.
+- O valor persiste nos modos local e Supabase e é preservado em backups antigos/novos.
+- Quando não preenchido, o comprovante não mostra uma linha de IE vazia.
 
 ## 7. Fora do escopo desta atualização
 
@@ -159,7 +229,11 @@ Os itens acima não fazem parte do escopo confirmado pelo cliente.
 2. **Favoritos — 15/10/2026:** lista compartilhada por toda a gráfica.
 3. **Modo local:** sem usuário e sem papel individual, não é possível separar acesso por colaborador. A regra por papel se aplica ao modo Supabase; favoritos funcionam também no armazenamento local.
 4. **Histórico por cliente — 22/10/2026:** mostrar orçamentos e vendas diretas do PDV associadas ao cliente para proprietário e colaboradores. Implementado e testado manualmente no modo local; a migração RLS está pronta, mas ainda deve ser aplicada no banco online. Relatórios e indicadores financeiros permanecem restritos.
-5. **Lista de vendas rápidas — 22/10/2026:** liberar para colaboradores a lista de oito vendas mais recentes e o contador total no PDV, incluindo balcão sem cliente e exibindo os totais de cada venda. A leitura é permitida pela nova migração; edição e exclusão continuam indisponíveis.
+5. **Lista de vendas rápidas — 22/10/2026:** liberar para colaboradores a lista paginada e o contador total no PDV, incluindo balcão sem cliente e exibindo os totais de cada venda. A decisão posterior define 10 vendas por página; edição e exclusão continuam indisponíveis.
+6. **Comprovante térmico — 22/10/2026:** imprimir em largura de 88 mm logo após registrar uma venda e oferecer reimpressão em cada linha da lista. É um comprovante não fiscal e o usuário escolhe a impressora no diálogo do navegador.
+7. **Lista de vendas — 22/10/2026:** acrescentar busca por número, data, cliente/balcão, vendedor e pagamento; mostrar 10 vendas por página.
+8. **Inscrição Estadual — 22/10/2026:** acrescentar campo opcional ao Perfil da Empresa e mostrá-lo no comprovante quando estiver preenchido.
+9. **Vendedor — 22/10/2026:** salvar a identidade e o nome da pessoa autenticada nas vendas novas do modo nuvem. Vendas antigas e o modo local sem login não recebem atribuição presumida.
 
 ## 9. Requisitos de segurança e dados
 
@@ -169,18 +243,21 @@ Os itens acima não fazem parte do escopo confirmado pelo cliente.
 - Não colocar senhas, chaves de API ou tokens neste PRD nem em `ACESSOS.md`.
 - Não reproduzir nos documentos os dados pessoais visíveis nas imagens da conversa.
 - Persistir qualquer novo campo de favorito nos dois modos de armazenamento e preservar registros existentes.
+- Restringir a autoria enviada por colaborador à identidade da sessão Supabase; preservar vendas antigas com autoria nula.
+- Manter Inscrição Estadual opcional e compatível com bancos, armazenamento local e backups existentes.
 
 ## 10. Dependências técnicas observadas
 
-- Papel da sessão: `src/context/AuthContext.tsx` fornece o papel `owner`/`member` por uma função Supabase.
+- Papel e identidade da sessão: `src/context/AuthContext.tsx` fornece papel `owner`/`member` e sessão Supabase; o cadastro `workspace_members.full_name` identifica o vendedor online.
 - Navegação/rotas: `src/components/Layout.tsx` e `src/App.tsx` escondem e protegem as telas de gestão financeira.
 - Autorização de dados: RLS restringe `contas_pagar` ao `owner`. Para HIST-01 e PDV-02, `member` pode ler todas as vendas rápidas do próprio espaço, mas não alterar/excluir registros. As tabelas de faturas/pagamentos permanecem compartilhadas conforme a decisão de negócio.
-- Produtos e PDV: `src/types.ts`, `src/pages/Itens.tsx`, `src/pages/Pdv.tsx`, `src/data/adapter.ts` e `supabase/schema.sql` são os pontos principais para o favorito.
+- Produtos e PDV: `src/types.ts`, `src/pages/Itens.tsx`, `src/pages/Pdv.tsx`, `src/lib/reciboVendaRapida.ts`, `src/data/adapter.ts` e o esquema/migração Supabase cobrem favoritos, lista, autoria e impressão.
+- Perfil da gráfica: `src/pages/Perfil.tsx`, `src/types.ts`, `src/data/adapter.ts` e o esquema/migração Supabase persistem Inscrição Estadual.
 - Histórico do cliente: `src/pages/Clientes.tsx` combina orçamentos e vendas por `clienteId`; a consulta no Supabase também depende da política RLS da migração HIST-01.
 - Fluxos locais e em nuvem devem continuar compatíveis.
 
 ## 11. Critério de conclusão desta atualização
 
-A atualização estará pronta quando FIN-01, PDV-01 e HIST-01 passarem pelos critérios acima, os dados existentes forem preservados e README, guia, fluxo e roteiro refletirem o comportamento efetivamente publicado. A alteração de código, sozinha, não significa que a migração e o frontend já foram publicados.
+A atualização estará pronta quando FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05 e EMP-01 passarem pelos critérios acima, os dados existentes forem preservados e README, guia, fluxo e roteiro refletirem o comportamento do código. A alteração de código, sozinha, não significa que a migração e o frontend já foram publicados.
 
 Os achados técnicos da auditoria são acompanhados separadamente em [AUDITORIA.md](AUDITORIA.md); eles não são pedidos do cliente nem mudam o escopo do [ROADMAP.md](ROADMAP.md).

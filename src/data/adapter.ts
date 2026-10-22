@@ -78,6 +78,13 @@ export class LocalAdapter implements DataAdapter {
           itens: Array.isArray(parsed.itens)
             ? parsed.itens.map((item) => ({ ...item, favorito: Boolean(item.favorito) }))
             : [],
+          vendasRapidas: Array.isArray(parsed.vendasRapidas)
+            ? parsed.vendasRapidas.map((venda) => ({
+                ...venda,
+                vendedorId: venda.vendedorId ?? null,
+                vendedorNome: venda.vendedorNome ?? '',
+              }))
+            : [],
           empresa: { ...EMPRESA_PADRAO, ...parsed.empresa },
         }
       } catch {
@@ -190,6 +197,7 @@ function toRow(collection: CollectionName, r: CollectionRow): Record<string, unk
       const v = r as VendaRapida
       return {
         id: v.id, numero: v.numero, cliente_id: v.clienteId,
+        vendedor_id: v.vendedorId, vendedor_nome: v.vendedorNome,
         data: v.data, forma_pagamento: v.formaPagamento, itens: v.itens,
         total: v.total, observacao: v.observacao, criado_em: v.criadoEm,
       }
@@ -267,6 +275,8 @@ function fromRow(collection: CollectionName, r: Record<string, unknown>): Collec
       return {
         id: s('id'), numero: s('numero'),
         clienteId: (r.cliente_id as string | null) ?? null,
+        vendedorId: (r.vendedor_id as string | null) ?? null,
+        vendedorNome: s('vendedor_nome'),
         data: s('data'), formaPagamento: s('forma_pagamento') as VendaRapida['formaPagamento'],
         itens: (r.itens ?? []) as VendaRapida['itens'], total: n('total'),
         observacao: s('observacao'), criadoEm: s('criado_em'),
@@ -293,7 +303,8 @@ function fromRow(collection: CollectionName, r: Record<string, unknown>): Collec
 
 function empresaToRow(e: Empresa): Record<string, unknown> {
   return {
-    nome: e.nome, cnpj: e.cnpj, email: e.email, telefone: e.telefone,
+    nome: e.nome, cnpj: e.cnpj, inscricao_estadual: e.inscricaoEstadual,
+    email: e.email, telefone: e.telefone,
     website: e.website, endereco: e.endereco, bairro: e.bairro,
     cidade: e.cidade, estado: e.estado, cep: e.cep, chave_pix: e.chavePix,
     logo_data_url: e.logoDataUrl, prefixo_orcamento: e.prefixoOrcamento,
@@ -307,7 +318,8 @@ function empresaToRow(e: Empresa): Record<string, unknown> {
 function empresaFromRow(r: Record<string, unknown>): Empresa {
   const s = (k: string, fallback = '') => (r[k] ?? fallback) as string
   return {
-    nome: s('nome', EMPRESA_PADRAO.nome), cnpj: s('cnpj'), email: s('email'),
+    nome: s('nome', EMPRESA_PADRAO.nome), cnpj: s('cnpj'),
+    inscricaoEstadual: s('inscricao_estadual'), email: s('email'),
     telefone: s('telefone'), website: s('website'), endereco: s('endereco'),
     bairro: s('bairro'), cidade: s('cidade'), estado: s('estado'), cep: s('cep'),
     chavePix: s('chave_pix'), logoDataUrl: s('logo_data_url'),

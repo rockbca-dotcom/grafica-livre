@@ -47,12 +47,12 @@ O ponto de entrada visual é `src/main.tsx`; `src/App.tsx` organiza os provedore
 | Produtos | Catálogo de produtos/serviços com preço por unidade, preço por m², descrição e estrela para favoritos compartilhados do PDV. | `itens` |
 | Orçamentos | Cria, edita, pesquisa, filtra, duplica, imprime/exporta em PDF, envia por e-mail/WhatsApp e converte em fatura. | `orcamentos` |
 | Faturas | Cria faturas diretamente ou a partir de orçamento; mostra status, PDF, guia, PIX, cobrança WhatsApp, e-mail e pagamentos. | `faturas`, `pagamentos` |
-| PDV | Venda de balcão sem orçamento/fatura; aceita item do catálogo ou item avulso, cliente opcional, forma de pagamento e observação. Sem busca, mostra favoritos da gráfica; se não houver favoritos, mostra todos. Com busca, pesquisa todos os itens. `member` pode inserir vendas, não vê indicadores e consulta as oito vendas rápidas mais recentes com número, data, cliente/balcão, pagamento e total, inclusive sem cliente. A lista é somente leitura; o carrinho mantém o total para fechar a venda. | `vendas_rapidas`, `itens` |
+| PDV | Venda de balcão sem orçamento/fatura; aceita item do catálogo ou item avulso, cliente opcional, forma de pagamento e observação. Sem busca no catálogo, mostra favoritos da gráfica; se não houver favoritos, mostra todos. Ao salvar, registra o vendedor autenticado no modo Supabase e abre o comprovante não fiscal de 88 mm para imprimir. A lista de vendas permite buscar número, data, cliente/balcão, vendedor e pagamento, mostra 10 por página e oferece reimpressão. `member` não vê indicadores e não pode alterar/excluir vendas existentes. | `vendas_rapidas`, `itens`, `empresa`, `workspace_members` |
 | Produção | Quadro Kanban com Arte → Impressão → Acabamento → Pronto → Entregue; cards manuais ou ligados a faturas. | `producao_cards` |
 | Contas a Receber | Rota disponível apenas para `owner`; lista faturas abertas, vencidas e próximas, registra/remove pagamentos e oferece cobrança. `member` registra pagamento dentro da tela Faturas. | `faturas`, `pagamentos` |
 | Contas a Pagar | Cadastra e quita despesas; rota e linhas do banco disponíveis apenas para `owner` (RLS). | `contas_pagar` |
 | Relatórios | Abas de Vendas, Fluxo de Caixa e Clientes, com período e exportação CSV; acesso de `owner`. | Faturas, pagamentos, vendas rápidas, despesas e clientes. |
-| Perfil da Empresa | Dados que aparecem nos documentos, logo, chave PIX, prefixo e próximos números. Consulta CEP pelo serviço ViaCEP. | `empresa` |
+| Perfil da Empresa | Dados de cadastro, Inscrição Estadual opcional, logo, chave PIX, prefixo e próximos números. Consulta CEP pelo serviço ViaCEP. | `empresa` |
 | Equipe | No modo Supabase, proprietário cadastra, revoga e reativa colaboradores. | `workspace_members`, usuários do Supabase Auth |
 | Configurações | Exporta JSON, importa backup atual ou formato legado e informa o modo de armazenamento. No Supabase, a exportação contém os registros que a sessão pode consultar segundo a RLS. | Coleções do espaço permitidas à sessão |
 | Assistente | Opcional no modo Supabase: consulta dados e propõe criar cliente, orçamento ou venda; ações exigem confirmação. Para `member`, não habilita resumo financeiro nem listagem do histórico de vendas rápidas; conserva consultas operacionais e de faturas. | Consultas RLS; NVIDIA; ações via Edge Function |
@@ -71,7 +71,9 @@ O ponto de entrada visual é `src/main.tsx`; `src/App.tsx` organiza os provedore
 ### PDV e produção
 
 - O PDV usa preço unitário se ele existir; caso contrário, usa preço por m². Produto sem preço não pode ser acrescentado pelo catálogo. Item avulso exige descrição e valor. Na abertura aparecem os favoritos compartilhados; busca em texto pesquisa o catálogo completo.
-- Uma venda do PDV é registrada em `vendas_rapidas`; por definição, não cria fatura nem card de produção.
+- Uma venda do PDV é registrada em `vendas_rapidas`; por definição, não cria fatura nem card de produção. No modo Supabase, salva `vendedor_id` e a cópia de `vendedor_nome` da pessoa conectada; vendas antigas e modo local sem sessão ficam sem identificação.
+- Após salvar, o sistema abre um comprovante não fiscal com largura de 88 mm e solicita a impressão pelo navegador. A lista também permite reimprimir cada venda com os dados atuais do Perfil da Empresa. A escolha/instalação da impressora é feita no computador; o app não controla o equipamento diretamente.
+- A lista de vendas é ordenada das mais recentes para as mais antigas, pesquisa número/data/cliente/balcão/vendedor/pagamento e mostra 10 registros por página. A pesquisa é feita no conjunto de vendas já carregado pelo adaptador.
 - O cartão de produção guarda cliente, título, etapa, prazo, data de entrega, observação e ordem na coluna.
 - O fluxo de produção não é controle de estoque nem emissão fiscal.
 
@@ -94,10 +96,10 @@ O ponto de entrada visual é `src/main.tsx`; `src/App.tsx` organiza os provedore
 | `orcamentos` | Número, cliente, datas, itens, totais, termos e status. | Pode originar uma fatura; a referência é guardada na fatura. |
 | `faturas` | Documento de cobrança e status. | Tem pagamentos separados e pode originar card de produção. |
 | `pagamentos` | Data, valor, forma e observação recebidos. | Cada registro aponta para uma fatura. |
-| `vendas_rapidas` | Venda direta do balcão com itens e total. | Cliente opcional; não depende de fatura. Todas as vendas aparecem na lista recente do PDV para `owner` e `member`; as que têm cliente também aparecem no histórico individual desse cliente. |
+| `vendas_rapidas` | Venda direta do balcão com itens, total e autoria opcional. | Cliente e vendedor opcionais para registros antigos/modo local; vendas online novas guardam `vendedor_id` e `vendedor_nome`. Todas as vendas aparecem na lista do PDV para `owner` e `member`; as que têm cliente também aparecem no histórico individual. |
 | `contas_pagar` | Despesa e sua quitação. | Não existe tabela de parcelas de pagamento nesta versão. |
 | `producao_cards` | Trabalho e etapa do processo. | Pode referenciar fatura e cliente. |
-| `empresa` | Perfil, PIX, logo e numeração. | Uma linha por espaço de gráfica no Supabase; objeto único no navegador local. |
+| `empresa` | Perfil, CNPJ, Inscrição Estadual, PIX, logo e numeração. | Uma linha por espaço de gráfica no Supabase; objeto único no navegador local. Inscrição Estadual é texto opcional. |
 | `workspace_members` | Pessoa, papel e status dentro da gráfica. | `owner` é administrador; `member` é colaborador. |
 
 Os vínculos entre documentos são mantidos pela aplicação; várias colunas de ID não têm `FOREIGN KEY` no esquema atual. Não presuma exclusão em cascata de clientes e documentos. A tela de cliente informa que excluir o cliente não apaga orçamentos nem faturas.
@@ -109,7 +111,7 @@ Os vínculos entre documentos são mantidos pela aplicação; várias colunas de
 | Local | Um objeto JSON na chave `graficaLivre` do `localStorage` do navegador. | Não tem login, sincronização, cópia automática da aplicação nem permissão individual. Limpar dados do navegador pode apagar o sistema. |
 | Nuvem | Banco Supabase, acessado pelo cliente autenticado e protegido por RLS. | `owner` vê os indicadores e módulos financeiros. `member` não abre Contas a Receber, Contas a Pagar ou Relatórios; RLS restringe `contas_pagar` a `owner`, permite inserir venda e consultar vendas rápidas do próprio espaço. Faturas, pagamentos e itens continuam compartilhados para operação e favoritos. |
 
-O adaptador traduz `camelCase` do TypeScript para `snake_case` do banco. Favoritos usam `itens.favorito`, são compartilhados entre membros e itens/backups antigos sem o campo são lidos como não favoritos.
+O adaptador traduz `camelCase` do TypeScript para `snake_case` do banco. Favoritos usam `itens.favorito`, são compartilhados entre membros e itens/backups antigos sem o campo são lidos como não favoritos. Inscrição Estadual e autoria têm valores padrão compatíveis com dados antigos; nenhum vendedor é inventado para venda legada.
 
 ## 7. Autenticação e papéis atuais
 
@@ -117,7 +119,7 @@ O adaptador traduz `camelCase` do TypeScript para `snake_case` do banco. Favorit
 - O primeiro login pode criar o espaço de proprietário por `ensure_workspace_membership()`; as credenciais de colaboradores são criadas pelo servidor na função `gerenciar-colaboradores`.
 - A criação, revogação e reativação de usuários é validada no backend como operação de `owner`.
 - `current_workspace_role()` devolve o papel ativo da sessão; `current_workspace_owner_id()` deixa de aceitar associações `invited` ou `revoked`.
-- RLS restringe `contas_pagar` a `owner`. `vendas_rapidas` pode ser inserida por membro e, conforme PDV-02, lida integralmente por membro no mesmo espaço, mas não atualizada ou excluída. A lista do PDV mostra as oito mais recentes; o histórico de cliente é uma junção visual das coleções `orcamentos` e `vendas_rapidas`, filtradas por `clienteId`, na tela Clientes. Tabelas `faturas`/`pagamentos` continuam compartilhadas: sustentam a tela Faturas permitida aos membros. Contas a Receber é bloqueada na interface/rota, mas não tem tabela isolada própria.
+- RLS restringe `contas_pagar` a `owner`. `vendas_rapidas` pode ser inserida por membro quando `vendedor_id` corresponde à sessão; `member` lê as vendas do próprio espaço, mas não as atualiza nem exclui. A lista do PDV permite pesquisa e paginação de 10. O histórico de cliente combina `orcamentos` e `vendas_rapidas` filtradas por `clienteId`. Tabelas `faturas`/`pagamentos` continuam compartilhadas: sustentam a tela Faturas permitida aos membros. Contas a Receber é bloqueada na interface/rota, mas não tem tabela isolada própria.
 - A equipe ainda não pode ser controlada no modo local.
 - O cadastro público do Supabase deve permanecer desligado na instalação orientada pelo [DEPLOY](DEPLOY.md).
 
@@ -140,6 +142,7 @@ Guarde segredos no cofre e no ambiente do provedor. O mapa de nomes e responsáv
 - Não é ERP fiscal e não emite NF-e, NFC-e, SAT ou escrituração.
 - Não há estoque, compras automatizadas, conciliação bancária ou controle de caixa por operador.
 - Não há suíte automatizada de testes configurada.
+- No modo local não há login, portanto não há como atribuir automaticamente um vendedor; o recibo é não fiscal e depende do diálogo de impressão do navegador e da configuração local da impressora.
 - O modo local não separa permissões por papel; favoritos são compartilhados no armazenamento daquele navegador.
-- A aplicação das migrações pendentes, incluindo `20261022120000_historico_pedidos_cliente.sql` e `20261022130000_vendas_rapidas_member_history.sql`, no banco online e a publicação do frontend ainda estão pendentes.
+- A aplicação das migrações pendentes, incluindo `20261022120000_historico_pedidos_cliente.sql`, `20261022130000_vendas_rapidas_member_history.sql` e `20261022140000_comprovante_venda_rapida.sql`, e a publicação do frontend/função `assistente-ia` ainda estão pendentes.
 - O estado atual do sistema e os achados de segurança/qualidade estão em [AUDITORIA.md](AUDITORIA.md).

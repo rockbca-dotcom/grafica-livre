@@ -508,6 +508,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             itens: Array.isArray(parsed.itens)
               ? parsed.itens.map((item: Item) => ({ ...item, favorito: Boolean(item.favorito) }))
               : [],
+            vendasRapidas: Array.isArray(parsed.vendasRapidas)
+              ? parsed.vendasRapidas.map((venda: VendaRapida) => ({
+                  ...venda,
+                  vendedorId: venda.vendedorId ?? null,
+                  vendedorNome: venda.vendedorNome ?? '',
+                }))
+              : [],
+            empresa: { ...emptyDatabase().empresa, ...parsed.empresa },
           }
           resumo = 'backup restaurado'
         }
