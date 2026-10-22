@@ -1,7 +1,7 @@
 # Fluxo do Gráfica Livre
 
-**Revisão:** 15/10/2026
-**Estado:** comportamento implementado no código; aplicação da migração e publicação online ainda pendentes.
+**Revisão:** 22/10/2026
+**Estado:** FIN-01, PDV-01 e HIST-01 implementados no código. Histórico conferido no modo local; migração e publicação online pendentes.
 **Regras detalhadas:** [PRD.md](PRD.md). Este desenho explica o caminho, não substitui os critérios de aceite.
 
 ## 1. Abrir o sistema e decidir o acesso
@@ -21,23 +21,43 @@ flowchart TD
     ROLE -- member --> MEMBER[Área operacional sem gestão financeira]
     MEMBER --> M1[Contas a Pagar, Contas a Receber e Relatórios bloqueados]
     MEMBER --> M2[Faturas, valores e pagamentos operacionais liberados]
+    MEMBER --> M3[Histórico individual por cliente liberado]
 ```
 
-O menu e a rota bloqueiam as telas financeiras para `member`. RLS libera `contas_pagar` somente a `owner`; em `vendas_rapidas`, o colaborador pode inserir uma venda, mas não ler o histórico. Faturas e pagamentos permanecem compartilhados porque são usados no atendimento e na cobrança.
+O menu e a rota bloqueiam as telas financeiras para `member`. RLS libera `contas_pagar` somente a `owner`; em `vendas_rapidas`, o colaborador pode inserir uma venda e ler apenas aquelas vinculadas a clientes. Faturas e pagamentos permanecem compartilhados porque são usados no atendimento e na cobrança.
 
 ### 1.1 O que acontece com uma venda rápida
 
 ```mermaid
 flowchart TD
-    PDV[Abrir PDV] --> ADD[Montar carrinho e registrar venda]
+    PDV[Abrir PDV] --> CLIENTE{Selecionar cliente?}
+    CLIENTE -->|Sim| ASSOCIAR[Associar cliente à venda]
+    CLIENTE -->|Não| SEM[Venda de balcão sem cliente]
+    ASSOCIAR --> ADD[Montar carrinho e registrar venda]
+    SEM --> ADD
     ADD --> ROLE{Modo e papel}
     ROLE -->|Local| LOCAL[Salvar no navegador; sem separar usuários]
-    ROLE -->|Supabase: owner| OWNER[Inserir venda e consultar histórico]
-    ROLE -->|Supabase: member| MEMBER[Inserir venda; sem consultar ou alterar histórico]
+    ROLE -->|Supabase: owner| OWNER[Inserir e consultar vendas]
+    ROLE -->|Supabase: member| MEMBER[Inserir venda; ler apenas vendas vinculadas a clientes]
     MEMBER --> TOTAL[Ver total do carrinho para concluir]
+    ASSOCIAR --> HIST[Venda fica disponível no histórico desse cliente]
 ```
 
-No Supabase, essa separação também é aplicada no banco pela RLS. O membro não pode ler vendas antigas, mas pode registrar as novas; no modo local, o navegador não identifica quem está usando o sistema.
+No Supabase, a RLS permite ao colaborador ler apenas vendas rápidas vinculadas a clientes; ele não altera/exclui vendas nem lê vendas sem cliente. No modo local, o navegador não identifica quem está usando o sistema.
+
+### 1.2 Consultar pedidos de um cliente
+
+```mermaid
+flowchart TD
+    CL[Clientes] --> SEL[Escolher o cliente]
+    SEL --> ABRIR[Clicar em Histórico]
+    ABRIR --> BUSCA[Reunir orçamentos e vendas diretas associados ao cliente]
+    BUSCA --> ORD[Ordenar do mais recente ao mais antigo]
+    ORD --> EXIBE[Mostrar data, tipo, número, itens, total e status]
+    EXIBE --> VAZIO{Há pedidos?}
+    VAZIO -->|Sim| CONSULTA[Owner e member consultam a lista]
+    VAZIO -->|Não| SEM[Exibir mensagem de histórico vazio]
+```
 
 ## 2. O que cada papel enxerga no resumo
 
@@ -48,11 +68,11 @@ flowchart LR
     O -- Não --> OP[Quantidade/funil de orçamentos e lista operacional]
     P[PDV] --> P2{owner ou modo local?}
     P2 -- Sim --> PFIN[Indicador recebido hoje e totais no histórico]
-    P2 -- Não --> PQUIET[Sem indicador nem histórico; venda continua com carrinho e total]
+    P2 -- Não --> PQUIET[Sem indicador nem lista geral; venda continua com carrinho e total]
     F[Faturas] --> F1[Valores, status e registro de pagamentos disponíveis]
     A[Assistente] --> A1{owner ou member?}
     A1 -- owner --> A2[Resumo financeiro e consultas do assistente]
-    A1 -- member --> A3[Consultas operacionais e faturas; sem resumo consolidado ou histórico do PDV]
+    A1 -- member --> A3[Consultas operacionais e faturas; sem resumo consolidado ou listagem geral do PDV]
 ```
 
 Orçamentos e faturas continuam mostrando os valores necessários para preparar documentos. O total do carrinho também continua visível para a pessoa concluir uma venda.
@@ -103,11 +123,12 @@ Marcar um item como favorito não altera preço nem histórico. Se a equipe aind
 4. O valor e a quantidade da venda continuam no carrinho para finalizar o atendimento.
 5. Para um serviço que exige proposta, crie um orçamento, depois converta em fatura e acompanhe o card na Produção.
 6. Registre recebimentos na própria fatura. O colaborador não usa Contas a Receber; essa tela e Contas a Pagar ficam para o proprietário.
-7. O Dashboard de colaborador mostra o acompanhamento operacional sem entradas, despesas ou saldos financeiros consolidados.
+7. Na lista de Clientes, clique em **Histórico** para consultar orçamentos e vendas do cliente. Ao registrar uma venda no PDV, selecione o cliente; vendas sem cliente não aparecem no histórico.
+8. O Dashboard de colaborador mostra o acompanhamento operacional sem entradas, despesas ou saldos financeiros consolidados.
 
 ## 6. Limites do modo local e da publicação
 
 - O modo local não sabe quem é proprietário ou colaborador; quem usa o mesmo perfil do navegador vê os mesmos dados.
 - No modo Supabase, os papéis `owner` e `member` são carregados da associação ativa da gráfica.
-- O bloqueio do acesso de `member` a `contas_pagar` e os favoritos compartilhados precisam da migração SQL descrita em [DEPLOY.md](DEPLOY.md) no banco online.
+- O bloqueio do acesso de `member` a `contas_pagar`, favoritos compartilhados e leitura de venda vinculada a cliente dependem das migrações SQL descritas em [DEPLOY.md](DEPLOY.md) no banco online.
 - Este fluxograma descreve a versão em código. Não significa que o ambiente de produção já recebeu a migração ou o frontend.

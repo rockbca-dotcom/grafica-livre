@@ -1,12 +1,12 @@
 # PRD — Gráfica Livre
 
-**Status:** FIN-01 e PDV-01 implementados no código. A nova solicitação HIST-01 foi confirmada em 22/10/2026 e ainda precisa ser implementada. Conferência manual, migrações e publicação online anteriores também estão pendentes.
+**Status:** FIN-01, PDV-01 e HIST-01 implementados no código. HIST-01 foi validado manualmente no modo local; a migração Supabase e a publicação online ainda estão pendentes.
 **Data da análise:** 14/10/2026; decisões confirmadas em 15/10/2026 e 22/10/2026.
 **Fonte principal:** exportação da conversa do WhatsApp “Sistema Gráfica”, incluindo texto, imagens e um vídeo com áudio; nova mensagem do cliente recebida em 22/10/2026.
 
 ## 1. Em uma frase
 
-O Gráfica Livre ajuda uma gráfica a registrar clientes e produtos, vender, orçar, faturar, acompanhar a produção e administrar suas finanças; o código atual restringe a gestão financeira por papel e agiliza o PDV com favoritos compartilhados, mas a versão online depende da migração e publicação descritas em [DEPLOY.md](DEPLOY.md).
+O Gráfica Livre ajuda uma gráfica a registrar clientes e produtos, vender, orçar, faturar, acompanhar a produção, consultar pedidos por cliente e administrar suas finanças; o código atual restringe a gestão financeira por papel e agiliza o PDV com favoritos compartilhados, mas a versão online depende das migrações e publicação descritas em [DEPLOY.md](DEPLOY.md).
 
 ## 2. Problemas do cliente
 
@@ -39,7 +39,7 @@ Esta seção registra o comportamento existente para que uma atualização não 
 | Produção | Cards caminham por Arte → Impressão → Acabamento → Pronto → Entregue. A tela também pode criar cards manualmente. |
 | Contas a pagar | Cada despesa tem descrição, categoria, fornecedor, vencimento, valor e status pendente/paga. Não há controle de parcelas nesta versão. |
 | Exclusão de cliente | Excluir cliente não apaga orçamentos ou faturas associados; o documento histórico permanece. |
-| Nuvem | Os registros operacionais são compartilhados no espaço da gráfica. RLS separa espaços diferentes; esta atualização acrescenta distinção para Contas a Pagar e telas de gestão financeira. |
+| Nuvem | Os registros operacionais são compartilhados no espaço da gráfica. RLS separa espaços diferentes, restringe Contas a Pagar e permite a consulta de vendas rápidas vinculadas a clientes conforme HIST-01. |
 
 O inventário de módulos, entidades e integrações está em [ARQUITETURA.md](ARQUITETURA.md). Problemas verificados no código estão em [AUDITORIA.md](AUDITORIA.md).
 
@@ -82,7 +82,7 @@ Não há um papel `admin` separado no código atual. Esta atualização deve usa
 - O `owner` continua usando os módulos financeiros normalmente.
 - Clientes, produtos, orçamentos, faturas e produção continuam operacionais para colaboradores.
 
-**Limite técnico importante:** `Contas a Receber` e Faturas usam as mesmas tabelas de `faturas` e `pagamentos`. Como o cliente autorizou valores e pagamentos na operação de faturas, a restrição dessa tela é aplicada na navegação e na rota; esses registros seguem acessíveis pela API para a tela Faturas. `contas_pagar` continua restrita por RLS. No código atual, só `owner` lê o histórico de `vendas_rapidas`; HIST-01 altera esse acesso para permitir a consulta de vendas vinculadas a clientes por `member`.
+**Limite técnico importante:** `Contas a Receber` e Faturas usam as mesmas tabelas de `faturas` e `pagamentos`. Como o cliente autorizou valores e pagamentos na operação de faturas, a restrição dessa tela é aplicada na navegação e na rota; esses registros seguem acessíveis pela API para a tela Faturas. `contas_pagar` continua restrita por RLS. Com HIST-01, `member` consulta vendas rápidas associadas a clientes e não lê vendas sem cliente; a política já está no repositório, mas ainda depende da migração no banco online.
 
 ### PDV-01 — Favoritar produtos de venda frequente
 
@@ -99,7 +99,7 @@ Não há um papel `admin` separado no código atual. Esta atualização deve usa
 - Favoritos são compartilhados por todos os membros da gráfica, permanecem salvos após atualizar a página e sincronizam entre dispositivos no modo nuvem.
 - Preços, descrições, orçamentos e demais dados dos produtos não são apagados nem alterados por favoritar.
 
-**Implementação:** campo booleano persistido no produto; itens antigos começam desmarcados; estrela de marcação no catálogo; filtro inicial do PDV com busca sobre o catálogo inteiro.
+**Implementação:** campo booleano persistido no produto; itens antigos começam desmarcados; estrela de marcação no catálogo; filtro inicial do PDV com busca sobre o catálogo inteiro. Implementado no código; ativação online depende da migração Supabase e publicação.
 
 ### HIST-01 — Consultar histórico de pedidos por cliente
 
@@ -116,10 +116,11 @@ Não há um papel `admin` separado no código atual. Esta atualização deve usa
 - Cada linha identifica o tipo, a data, o número e os itens; exibe também total e status quando existirem no registro.
 - Um orçamento convertido em fatura aparece uma vez, com o status `faturado`, sem duplicar a entrada.
 - `owner` e `member` podem consultar esse histórico no modo Supabase. As telas de relatórios, Contas a Pagar e indicadores financeiros consolidados continuam restritas conforme FIN-01.
+- A ação **Histórico** na lista de Clientes abre a relação; não altera nem duplica os registros originais.
 - Vendas rápidas registradas sem cliente não aparecem no histórico de nenhum cliente. Para associar uma nova venda, a equipe seleciona o cliente no PDV antes de registrar.
 - Registros antigos que já tenham `clienteId` podem aparecer sem migração de dados; vendas antigas sem cliente não podem ser atribuídas automaticamente.
 
-**Impacto de acesso:** hoje a RLS bloqueia a leitura de `vendas_rapidas` para `member`. Para cumprir esta decisão, uma migração deve permitir que colaboradores leiam as vendas rápidas associadas a clientes. Essa permissão de banco torna essas vendas consultáveis pela sessão autenticada, não apenas pelo botão do histórico; vendas sem cliente continuam fora da consulta do colaborador.
+**Implementação e impacto de acesso:** a interface combina orçamentos e vendas rápidas associadas ao cliente em ordem decrescente de data. A migração `20261022120000_historico_pedidos_cliente.sql` permite a `member` ler vendas rápidas vinculadas a clientes, sem permitir alteração/exclusão e sem liberar vendas sem cliente. Essa permissão de banco torna essas vendas consultáveis pela sessão autenticada, não apenas pelo botão do histórico. O modo local não aplica papéis.
 
 ## 7. Fora do escopo desta atualização
 
@@ -137,12 +138,12 @@ Os itens acima não fazem parte do escopo confirmado pelo cliente.
 1. **Financeiro — 15/10/2026:** restringir gestão e indicadores. Bloquear Contas a Pagar, Contas a Receber, Relatórios e indicadores financeiros consolidados para `member`; manter faturas, valores e pagamentos acessíveis para a operação.
 2. **Favoritos — 15/10/2026:** lista compartilhada por toda a gráfica.
 3. **Modo local:** sem usuário e sem papel individual, não é possível separar acesso por colaborador. A regra por papel se aplica ao modo Supabase; favoritos funcionam também no armazenamento local.
-4. **Histórico por cliente — 22/10/2026:** mostrar orçamentos e vendas diretas do PDV associadas ao cliente para proprietário e colaboradores. A leitura de vendas rápidas por `member` precisa ser liberada por migração RLS; relatórios e indicadores financeiros permanecem restritos.
+4. **Histórico por cliente — 22/10/2026:** mostrar orçamentos e vendas diretas do PDV associadas ao cliente para proprietário e colaboradores. Implementado e testado manualmente no modo local; a migração RLS está pronta, mas ainda deve ser aplicada no banco online. Relatórios e indicadores financeiros permanecem restritos.
 
 ## 9. Requisitos de segurança e dados
 
 - Aplicar autorização na interface e no banco às coleções de gestão financeira; bloquear URL direta das telas financeiras.
-- Aplicar RLS coerente com HIST-01: `owner` consulta e administra vendas rápidas; `member` pode inserir vendas e consultar apenas as vendas vinculadas a clientes, sem alterar ou excluir registros nem ler vendas sem cliente.
+- Aplicar RLS coerente com HIST-01: `owner` consulta e administra vendas rápidas; `member` pode inserir vendas e consultar apenas as vendas vinculadas a clientes, sem alterar ou excluir registros nem ler vendas sem cliente. A política está no esquema e na migração `20261022120000_historico_pedidos_cliente.sql`.
 - Não apresentar indicadores consolidados ou dados de Contas a Pagar a `member`. Manter dados de faturas/pagamentos carregados por serem necessários às operações que o cliente preservou.
 - Não colocar senhas, chaves de API ou tokens neste PRD nem em `ACESSOS.md`.
 - Não reproduzir nos documentos os dados pessoais visíveis nas imagens da conversa.
@@ -152,8 +153,9 @@ Os itens acima não fazem parte do escopo confirmado pelo cliente.
 
 - Papel da sessão: `src/context/AuthContext.tsx` fornece o papel `owner`/`member` por uma função Supabase.
 - Navegação/rotas: `src/components/Layout.tsx` e `src/App.tsx` escondem e protegem as telas de gestão financeira.
-- Autorização de dados: RLS restringe `contas_pagar` ao `owner`. Atualmente, só `owner` lê vendas rápidas; para HIST-01, a RLS deverá permitir que `member` leia as vinculadas a clientes e continue sem acesso às não vinculadas. As tabelas de faturas/pagamentos permanecem compartilhadas conforme a decisão de negócio.
+- Autorização de dados: RLS restringe `contas_pagar` ao `owner`. Para HIST-01, `member` pode ler vendas rápidas vinculadas a clientes, mas não alterar/excluir registros nem ler vendas sem cliente. As tabelas de faturas/pagamentos permanecem compartilhadas conforme a decisão de negócio.
 - Produtos e PDV: `src/types.ts`, `src/pages/Itens.tsx`, `src/pages/Pdv.tsx`, `src/data/adapter.ts` e `supabase/schema.sql` são os pontos principais para o favorito.
+- Histórico do cliente: `src/pages/Clientes.tsx` combina orçamentos e vendas por `clienteId`; a consulta no Supabase também depende da política RLS da migração HIST-01.
 - Fluxos locais e em nuvem devem continuar compatíveis.
 
 ## 11. Critério de conclusão desta atualização

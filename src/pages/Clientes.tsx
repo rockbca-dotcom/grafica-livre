@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Cliente } from '../types'
 import { emailsDoCliente } from '../types'
@@ -6,11 +6,24 @@ import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
 import {
   Button, Card, ConfirmDialog, DataTable, EmptyState, Field, Modal,
-  PageHeader, SearchBox, inputClass,
+  PageHeader, SearchBox, StatusBadge, inputClass,
 } from '../components/ui'
 import { maskCep, maskCpfCnpj, maskTelefone, onlyDigits, telefoneParaDigitos, validateDocumento } from '../lib/validation'
 import { buscarCep } from '../lib/viacep'
 import { buscarCnpj } from '../lib/cnpj'
+import { formatDateBR } from '../lib/dates'
+import { formatCents } from '../lib/money'
+
+type PedidoHistorico = {
+  id: string
+  tipo: string
+  numero: string
+  data: string
+  criadoEm: string
+  itens: { descricao: string; qtd: number }[]
+  total: number
+  status: string | null
+}
 
 const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
 
@@ -240,8 +253,38 @@ export default function Clientes() {
   const { showToast } = useToast()
   const [search, setSearch] = useState('')
   const [editing, setEditing] = useState<Cliente | null>(null)
+  const [historicoCliente, setHistoricoCliente] = useState<Cliente | null>(null)
   const [deleting, setDeleting] = useState<Cliente | null>(null)
   const [saving, setSaving] = useState(false)
+  const pedidosHistorico = useMemo<PedidoHistorico[]>(() => {
+    if (!historicoCliente) return []
+    return [
+      ...db.orcamentos
+        .filter((orcamento) => orcamento.clienteId === historicoCliente.id)
+        .map((orcamento) => ({
+          id: `orcamento-${orcamento.id}`,
+          tipo: 'Orçamento',
+          numero: orcamento.numero,
+          data: orcamento.data,
+          criadoEm: orcamento.criadoEm,
+          itens: orcamento.itens.map(({ descricao, qtd }) => ({ descricao, qtd })),
+          total: orcamento.total,
+          status: orcamento.status,
+        })),
+      ...db.vendasRapidas
+        .filter((venda) => venda.clienteId === historicoCliente.id)
+        .map((venda) => ({
+          id: `venda-${venda.id}`,
+          tipo: 'Venda direta (PDV)',
+          numero: venda.numero,
+          data: venda.data,
+          criadoEm: venda.criadoEm,
+          itens: venda.itens.map(({ descricao, qtd }) => ({ descricao, qtd })),
+          total: venda.total,
+          status: null,
+        })),
+    ].sort((a, b) => b.data.localeCompare(a.data) || b.criadoEm.localeCompare(a.criadoEm))
+  }, [db.orcamentos, db.vendasRapidas, historicoCliente])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -322,6 +365,9 @@ export default function Clientes() {
               className: 'text-right whitespace-nowrap',
               render: (c) => (
                 <div className="flex justify-end gap-1.5">
+                  <Button small variant="secondary" onClick={() => setHistoricoCliente(c)}>
+                    Histórico
+                  </Button>
                   <Button small variant="secondary" onClick={() => setEditing({ ...c })}>
                     Editar
                   </Button>
@@ -354,6 +400,59 @@ export default function Clientes() {
           <form id="cliente-form" onSubmit={handleSubmit}>
             <ClienteFormFields cliente={editing} onChange={setEditing} />
           </form>
+        )}
+      </Modal>
+
+      <Modal
+        open={historicoCliente !== null}
+        title={`Histórico de pedidos${historicoCliente ? ` — ${historicoCliente.nome}` : ''}`}
+        onClose={() => setHistoricoCliente(null)}
+        wide
+        footer={
+          <div className="flex justify-end">
+            <Button type="button" variant="secondary" onClick={() => setHistoricoCliente(null)}>
+              Fechar
+            </Button>
+          </div>
+        }
+      >
+        {pedidosHistorico.length === 0 ? (
+          <EmptyState
+            icon="🧾"
+            title="Nenhum pedido no histórico"
+            hint="Os orçamentos e as vendas do PDV associados a este cliente aparecerão aqui."
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <th className="px-3 py-3">Data</th>
+                  <th className="px-3 py-3">Tipo</th>
+                  <th className="px-3 py-3">Número</th>
+                  <th className="px-3 py-3">Itens</th>
+                  <th className="px-3 py-3 text-right">Total</th>
+                  <th className="px-3 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pedidosHistorico.map((pedido) => (
+                  <tr key={pedido.id} className="border-b border-slate-100 last:border-0">
+                    <td className="whitespace-nowrap px-3 py-3">{formatDateBR(pedido.data)}</td>
+                    <td className="whitespace-nowrap px-3 py-3">{pedido.tipo}</td>
+                    <td className="whitespace-nowrap px-3 py-3 font-medium text-slate-700">{pedido.numero}</td>
+                    <td className="max-w-sm px-3 py-3 text-slate-600">
+                      {pedido.itens.map((item) => `${item.qtd} × ${item.descricao}`).join(', ') || '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right font-semibold">{formatCents(pedido.total)}</td>
+                    <td className="whitespace-nowrap px-3 py-3">
+                      {pedido.status ? <StatusBadge status={pedido.status} /> : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Modal>
 

@@ -1,26 +1,26 @@
 # Auditoria do sistema
 
-**Data da revisão inicial:** 14/10/2026. **Atualização do código:** 15/10/2026.
-**Escopo inicial:** leitura estática do código, esquema e funções Supabase; execução de lint/build; verificação de dependências via `npm audit`. **Revisão desta atualização:** leitura das mudanças, `npm run lint`, `npm run build` e reconstrução do container Docker local.
-**Limite:** não houve acesso ao Supabase/Vercel de produção nem dados de clientes. Não foi aplicada migração no banco online nem feito teste manual de interface em produção. O container local não comprova publicação online.
+**Data da revisão inicial:** 14/10/2026. **Atualizações do código:** 15/10/2026 e 22/10/2026.
+**Escopo desta revisão:** leitura das mudanças, `npm run lint`, `npm run build` e teste manual do histórico no navegador local usando dados fictícios.
+**Limite:** não houve acesso ao Supabase/Vercel de produção nem dados de clientes. A migração HIST-01 não foi executada contra Supabase local ou online; o teste manual usou armazenamento local. Não foi feito teste manual de interface em produção.
 
 ## Resumo para decisão
 
-1. A restrição pedida para colaborador foi implementada no código e tem uma migração pronta; ainda precisa ser aplicada no Supabase online e publicada.
+1. FIN-01 e PDV-01 estão no código. HIST-01 também está implementado e foi validado no modo local. Para o modo nuvem, as migrações pendentes precisam ser aplicadas e a versão publicada; a regra RLS de HIST-01 ainda não foi validada em um banco Supabase.
 2. A restauração de backup substitui os dados atuais e não é validada nem transacional no Supabase; uma falha no meio pode deixar dados incompletos.
 3. `npm audit` sinaliza cinco dependências com vulnerabilidades classificadas como altas.
 4. Lint e build funcionaram. O lint apontou 10 avisos; o build apontou um aviso de arquivos JavaScript grandes. Não existe comando/suíte de teste automatizado configurado.
 
 ## Achados priorizados
 
-### AUD-01 — Restrição financeira por papel precisa ser aplicada no ambiente online
+### AUD-01 — Restrições por papel e histórico do cliente precisam ser aplicados no ambiente online
 
 **Prioridade:** P1 até a implantação; o código local já implementa o escopo confirmado.
-**Impacto atual do código:** `member` não vê nem abre as rotas Contas a Receber, Contas a Pagar e Relatórios; Dashboard/PDV ocultam indicadores e histórico de vendas; resumo consolidado do assistente é restrito. RLS restringe `contas_pagar` e a leitura de `vendas_rapidas` a `owner`, mas permite que `member` insira uma venda. Faturas, valores e pagamentos permanecem acessíveis conforme a escolha do cliente.
+**Impacto atual do código:** `member` não vê nem abre as rotas Contas a Receber, Contas a Pagar e Relatórios; Dashboard/PDV ocultam indicadores e a lista geral de vendas; resumo consolidado do assistente é restrito. RLS restringe `contas_pagar` a `owner`, permite que `member` insira uma venda e, após HIST-01, permite leitura somente das vendas rápidas vinculadas a cliente. Faturas, valores e pagamentos permanecem acessíveis conforme a escolha do cliente.
 
-**Evidência da correção:** papel carregado por `current_workspace_role()`; guardas de rota e menu em `src/App.tsx` e `src/components/Layout.tsx`; indicadores condicionados em Dashboard/PDV; consultas do assistente limitadas por papel; políticas no esquema e na migração `20261015120000_favoritos_e_acesso_financeiro.sql`.
+**Evidência no repositório:** papel carregado por `current_workspace_role()`; guardas de rota e menu em `src/App.tsx` e `src/components/Layout.tsx`; indicadores condicionados em Dashboard/PDV; consultas do assistente limitadas por papel; políticas no esquema e nas migrações `20261015120000_favoritos_e_acesso_financeiro.sql` e `20261022120000_historico_pedidos_cliente.sql`. O histórico combina orçamentos e vendas no componente `src/pages/Clientes.tsx`.
 
-**Próximo passo:** aplicar a migração no banco Supabase existente e publicar o frontend. `Contas a Receber` não tem tabela exclusiva: a rota é bloqueada, mas faturas e pagamentos seguem disponíveis para a tela operacional Faturas, como autorizado pelo cliente. O modo local não separa papéis. Critérios e sequência: [PRD.md](PRD.md) e [ROADMAP.md](ROADMAP.md).
+**Validação e próximo passo:** o histórico foi conferido manualmente no modo local com um orçamento e uma venda direta associados ao mesmo cliente. Aplicar as migrações pendentes no banco Supabase, testar o resultado como `owner` e `member` e publicar o frontend. `Contas a Receber` não tem tabela exclusiva: a rota é bloqueada, mas faturas e pagamentos seguem disponíveis para a tela operacional Faturas, como autorizado pelo cliente. O modo local não separa papéis. Critérios e sequência: [PRD.md](PRD.md) e [ROADMAP.md](ROADMAP.md).
 
 ### AUD-02 — `npm audit` encontrou cinco vulnerabilidades altas
 
@@ -94,10 +94,13 @@ Avisos consultados pelo próprio relatório:
 |---|---|
 | `npm run lint` | Concluiu com código 0. Emite 10 avisos `react(only-export-components)` em componentes/contexts que também exportam funções auxiliares. |
 | `npm run build` (14/10 e 15/10) | Concluiu com código 0; TypeScript e Vite produziram o bundle. O Vite avisou sobre chunks maiores que 500 KB; bundle principal minificado de aproximadamente 910 KB e chunk PDF de aproximadamente 1,84 MB. |
+| `npm run lint` (22/10) | Concluiu com código 0 após a implementação do histórico; permanecem 10 avisos `react(only-export-components)`. |
+| `npm run build` (22/10) | Concluiu com código 0 após a implementação do histórico; permanece aviso de chunk acima de 500 KB. |
+| Teste manual local (22/10) | A tela Clientes mostrou no histórico o orçamento ORC-1 e a venda PDV-20261022-F14AB9 do cliente fictício, com itens, totais, status e datas. Testado no modo local; não valida RLS/Supabase. |
 | `npm audit --audit-level=moderate` | Código 1; cinco vulnerabilidades altas acima. |
 | Testes automatizados | Não executados: o projeto não configura framework nem script `test`. |
 | Ambiente de produção | Não validado: sem acesso às contas/projetos Supabase e Vercel. |
-| Docker local | Imagem reconstruída e container `grafica-livre-web` iniciado em 15/10/2026. Isso valida o container local, não o deploy online. |
+| Docker local | A tentativa desta revisão não encontrou o daemon Docker ativo; nenhum teste com container foi executado. O container registrado na revisão de 15/10 não valida o deploy online. |
 
 ## Ordem recomendada de correção
 

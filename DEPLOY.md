@@ -68,11 +68,11 @@ Salve.
 
 Todos os colaboradores cadastrados usam o mesmo link e trabalham nos mesmos dados da gráfica. O proprietário pode revogar e reativar acessos na tela **Equipe**. O sistema cria as contas diretamente no Supabase e não depende do envio de convites por e-mail.
 
-O código da atualização restringe as telas de gestão financeira a `owner`, protege `contas_pagar` e o histórico de `vendas_rapidas` com RLS e salva favoritos compartilhados. Em ambiente existente, aplique a nova migração no banco e publique a versão atual do frontend antes de considerar essas regras ativas online. Colaboradores continuam usando faturas, valores, pagamentos e registro de novas vendas no PDV.
+O código da atualização restringe as telas de gestão financeira a `owner`, protege `contas_pagar`, salva favoritos compartilhados e permite a `member` consultar vendas rápidas vinculadas a clientes na área **Clientes → Histórico**. A lista geral do PDV permanece restrita. Em ambiente existente, aplique as migrações pendentes no banco e publique a versão atual do frontend antes de considerar essas regras ativas online. Colaboradores continuam usando faturas, valores, pagamentos e registro de novas vendas no PDV.
 
 ### Migrações em uma instalação existente
 
-Se o sistema já está em produção, faça um backup externo e aplique os arquivos ainda não executados em `supabase/migrations/` em ordem temporal no **SQL Editor** antes de publicar o frontend. O histórico deste repositório inclui `20261001212303_multiusuarios.sql`, `20261001213922_proximo_numero_search_path.sql`, `20261001222753_cadastro_manual_colaboradores.sql` e `20261015120000_favoritos_e_acesso_financeiro.sql`. A última migração adiciona `itens.favorito`, expõe o papel ativo da sessão, restringe `contas_pagar` e a leitura do histórico de `vendas_rapidas` ao proprietário e mantém a inserção de vendas pelo colaborador. Execute apenas migrações ainda não aplicadas, uma por vez, confira o resultado e não repita um arquivo que terminou com erro sem antes conferir o estado do banco.
+Se o sistema já está em produção, faça um backup externo e aplique os arquivos ainda não executados em `supabase/migrations/` em ordem temporal no **SQL Editor** antes de publicar o frontend. O histórico deste repositório inclui `20261001212303_multiusuarios.sql`, `20261001213922_proximo_numero_search_path.sql`, `20261001222753_cadastro_manual_colaboradores.sql`, `20261015120000_favoritos_e_acesso_financeiro.sql` e `20261022120000_historico_pedidos_cliente.sql`. A migração de 15/10 adiciona `itens.favorito`, expõe o papel ativo da sessão e restringe `contas_pagar`; a migração de 22/10 permite que `member` leia somente vendas rápidas associadas a clientes, mantendo vendas sem cliente fora da consulta do colaborador e sem liberar alteração/exclusão. Execute apenas migrações ainda não aplicadas, uma por vez, confira o resultado e não repita um arquivo que terminou com erro sem antes conferir o estado do banco.
 
 ### Funções de servidor
 
@@ -92,7 +92,7 @@ Os segredos das funções não devem receber prefixo `VITE_`. Sem o secret ou a 
 2. Leia a versão e aplique as migrações necessárias, uma por vez.
 3. Publique/atualize as Edge Functions usadas e confira os secrets.
 4. Publique o frontend com as variáveis `VITE_*`.
-5. Teste login, cliente, produto, orçamento, PDF, fatura, pagamento e produção. Teste também uma sessão de colaborador.
+5. Teste login, cliente e o histórico de um cliente, venda no PDV com e sem cliente, produto, orçamento, PDF, fatura, pagamento e produção. Teste também uma sessão de colaborador, incluindo a leitura de uma venda vinculada e a ausência de venda sem cliente.
 6. Registre data e responsável pela publicação sem incluir valores de secrets.
 
 O app faz exportação manual; ele não agenda nem confirma backup automático no Supabase. A importação JSON substitui os dados atuais e tem os riscos descritos em AUD-03 de [AUDITORIA.md](AUDITORIA.md).
@@ -108,5 +108,5 @@ Depois atualize a Site URL no Supabase para esse domínio.
 - Não deixe o cadastro público ligado no Supabase.
 - Não use a chave `service_role` no frontend. Só a `anon`.
 - Os dados de teste do seu PC **não sobem sozinhos**. Exporte o JSON no modo local e importe no sistema online, se o app tiver essa opção na tela de configurações/backup.
-- Não considere as restrições financeiras e o histórico protegido do PDV ativos na nuvem antes de aplicar a migração e publicar o frontend desta versão.
+- Não considere as restrições financeiras, favoritos compartilhados e histórico por cliente ativos na nuvem antes de aplicar as migrações pendentes e publicar o frontend desta versão.
 - Não ative o assistente sem aprovar o envio de mensagens e resultados do banco ao serviço externo.

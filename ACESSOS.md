@@ -40,7 +40,7 @@ Arquivos de exemplo sem segredos: `.env.example` e `supabase/functions/.env.exam
 - Colaboradores: papel `member`; cadastrar e revogar pela tela Equipe, compartilhando a senha inicial por canal seguro.
 - Senhas são individuais. Não reutilize a senha do proprietário para colaboradores.
 - Nenhum e-mail/login visível nas capturas da conversa foi copiado para este arquivo.
-- No código atual, `member` não abre Contas a Pagar, Contas a Receber ou Relatórios e não vê indicadores financeiros consolidados; continua usando Faturas e registrando vendas no PDV. Para essas regras valerem online, a migração e a publicação descritas em [DEPLOY.md](DEPLOY.md) ainda precisam ser aplicadas.
+- No código atual, `member` não abre Contas a Pagar, Contas a Receber ou Relatórios e não vê indicadores financeiros consolidados; continua usando Faturas e registrando vendas no PDV. Também pode consultar em Clientes → Histórico as vendas vinculadas a clientes, sem acesso à lista geral nem às vendas sem cliente. Para essas regras valerem online, as migrações e a publicação descritas em [DEPLOY.md](DEPLOY.md) ainda precisam ser aplicadas.
 - O modo local não cria usuários, não tem papel e não compartilha os dados com outro navegador.
 - A ativação do assistente envia mensagens e resultados consultados para o serviço externo NVIDIA. O responsável deve registrar se essa integração foi aprovada.
 

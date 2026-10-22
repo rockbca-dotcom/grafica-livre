@@ -9,6 +9,7 @@ Para equipes que precisam sair de anotações e planilhas dispersas e acompanhar
 ## O que o sistema oferece hoje
 
 - **Produtos e clientes:** catálogo, preços e dados de contato centralizados.
+- **Histórico por cliente:** consulta conjunta de orçamentos e vendas diretas do PDV associados ao cliente.
 - **Orçamentos:** montagem de itens, cálculo de valores, geração de PDF e compartilhamento.
 - **Faturas:** conversão de orçamento, registro de pagamentos, PIX e documentos para o cliente.
 - **PDV — venda rápida:** registro de vendas de balcão sem abrir orçamento ou iniciar produção.
@@ -25,12 +26,13 @@ O sistema pode ser usado localmente em um navegador ou conectado ao Supabase par
 
 ## Solicitações do cliente e estado da atualização
 
-A conversa de 14/10/2026 trouxe dois pedidos, já implementados no código deste repositório:
+A conversa de 14/10/2026 trouxe dois pedidos, e em 22/10/2026 foi solicitado o histórico de pedidos por cliente. Os três recursos estão implementados no código deste repositório:
 
 1. Restringir a área financeira ao proprietário/administrador.
 2. Destacar no PDV, como favoritos, os produtos mais vendidos e localizar os demais pela busca.
+3. Consultar orçamentos e vendas diretas do PDV de cada cliente em seu histórico.
 
-O escopo foi confirmado em 15/10/2026: gestão e indicadores financeiros restritos ao proprietário, faturas e pagamentos operacionais liberados para a equipe, e favoritos do PDV compartilhados pela gráfica. A versão do repositório contém essas mudanças; para ativá-las no ambiente online, ainda é necessário aplicar a migração Supabase e publicar o frontend. O que já está pronto e o que falta conferir está em [ROADMAP](ROADMAP.md), e as regras completas estão no [PRD](PRD.md).
+O escopo foi confirmado em 15/10/2026 e 22/10/2026: gestão e indicadores financeiros restritos ao proprietário, faturas e pagamentos operacionais liberados para a equipe, favoritos do PDV compartilhados pela gráfica e histórico de cliente visível a `owner` e `member`. A versão do repositório contém essas mudanças; para ativá-las no ambiente online, ainda é necessário aplicar as migrações Supabase pendentes e publicar o frontend. O que já está pronto e o que falta conferir está em [ROADMAP](ROADMAP.md), e as regras completas estão no [PRD](PRD.md).
 
 ## Documentação do projeto
 

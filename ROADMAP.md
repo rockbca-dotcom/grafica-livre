@@ -1,6 +1,6 @@
 # ROADMAP — pedidos do cliente
 
-**Estado:** FIN-01 e PDV-01 implementados no código. A solicitação HIST-01 foi confirmada em 22/10/2026 e ainda precisa ser implementada. Conferência manual, migrações do Supabase e publicação continuam pendentes.
+**Estado:** FIN-01, PDV-01 e HIST-01 implementados no código. O histórico foi validado manualmente no modo local; aplicação das migrações pendentes no Supabase e publicação do frontend continuam necessárias para ativar a versão online.
 **Fonte:** conversa exportada do WhatsApp em 14/10/2026 e nova mensagem do cliente em 22/10/2026.
 **Detalhamento e decisões de negócio:** [PRD.md](PRD.md).
 
@@ -22,7 +22,7 @@
 - [x] Bloquear as mesmas rotas para `member`, inclusive ao digitar o endereço diretamente.
 - [x] Aplicar RLS de `owner` à tabela `contas_pagar`.
 - [x] Manter o carregamento operacional para faturas e pagamentos e bloquear Contas a Pagar sem travar os demais dados.
-- [x] Ocultar indicadores financeiros do Dashboard/PDV e limitar resumos financeiros do assistente; manter inserção de vendas rápidas e bloquear a leitura do histórico por RLS.
+- [x] Ocultar indicadores financeiros do Dashboard/PDV e limitar resumos financeiros do assistente; manter a lista geral do PDV restrita e permitir ao membro consultar vendas vinculadas a clientes conforme HIST-01.
 - [x] Manter acesso do `owner` e faturas, valores, pagamentos e venda do PDV para `member`.
 
 **Dependência:** Etapa 0.
@@ -41,7 +41,7 @@
 **Dependência:** confirmação sobre compartilhamento.
 **Aceite:** critérios de `PDV-01` em [PRD.md](PRD.md).
 
-### Etapa 3 — Conferir, documentar e publicar
+### Etapa 3 — Conferir, documentar e publicar FIN-01 e PDV-01
 
 - [x] Executar `npm run lint` e `npm run build`; ambos concluíram com código 0 (avisos registrados em [AUDITORIA.md](AUDITORIA.md)).
 - [ ] Conferir manualmente os cenários de proprietário, colaborador e acesso direto às rotas.
@@ -51,16 +51,18 @@
 - [ ] Aplicar migração do banco e publicar o frontend na ordem registrada no DEPLOY.md.
 - [ ] Registrar a data e o responsável pela publicação, sem incluir senhas ou chaves.
 
-### Etapa 4 — Histórico de pedidos por cliente — escopo confirmado; implementação pendente
+### Etapa 4 — Histórico de pedidos por cliente — implementação local concluída
 
 - [x] Incluir orçamentos e vendas diretas do PDV associados ao cliente.
 - [x] Definir que proprietário e colaboradores podem consultar o histórico.
 - [x] Manter relatórios, Contas a Pagar e indicadores consolidados restritos conforme FIN-01.
-- [ ] Adicionar acesso ao histórico na tela de Clientes e listar registros do cliente do mais recente ao mais antigo.
-- [ ] Exibir tipo, data, número, itens, total e status; orçamento convertido deve aparecer uma vez com status faturado.
-- [ ] Ajustar RLS para permitir que `member` consulte vendas rápidas associadas a clientes; manter vendas sem cliente fora da leitura do colaborador.
-- [ ] Conferir vendas novas e antigas com cliente, vendas sem cliente, orçamentos e orçamentos faturados nos modos local e Supabase.
-- [ ] Atualizar fluxograma, arquitetura e guias após a implementação; aplicar migração e publicar a versão atualizada.
+- [x] Adicionar ação **Histórico** à tela de Clientes e listar registros do cliente do mais recente ao mais antigo.
+- [x] Exibir tipo, data, número, itens, total e status; orçamento convertido aparece uma vez com status `faturado`.
+- [x] Ajustar RLS para permitir que `member` consulte vendas rápidas associadas a clientes; manter vendas sem cliente fora da leitura do colaborador.
+- [x] Conferir localmente um orçamento e uma venda direta vinculados ao mesmo cliente.
+- [x] Atualizar fluxograma, arquitetura e guias com o comportamento implementado.
+- [ ] Validar a política RLS numa instância Supabase e testar os papéis no modo nuvem.
+- [ ] Aplicar a migração no banco online e publicar a versão atualizada.
 
 **Aceite:** critérios de `HIST-01` em [PRD.md](PRD.md).
 
@@ -71,7 +73,7 @@ Confirmações do cliente
         ├──> Permissões financeiras no frontend, no assistente e no Supabase
         ├──> Favoritos compartilhados no catálogo e no PDV
         └──> Histórico de pedidos por cliente para owner/member
-                 └──> Implementação, validação e publicação pendentes
+                 └──> Implementação concluída; validação em nuvem e publicação pendentes
 ```
 
 ## O que não entra neste roteiro
