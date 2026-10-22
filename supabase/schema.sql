@@ -342,11 +342,12 @@ create policy "contas_pagar_owner_only" on public.contas_pagar
     and (select public.current_workspace_role()) = 'owner'
   );
 
--- Colaboradores podem registrar vendas e consultar as que estão vinculadas a clientes.
+-- Colaboradores podem registrar vendas e consultar o histórico completo da gráfica.
 drop policy if exists "dono" on public.vendas_rapidas;
 drop policy if exists "vendas_rapidas_owner_all" on public.vendas_rapidas;
 drop policy if exists "vendas_rapidas_member_insert" on public.vendas_rapidas;
 drop policy if exists "vendas_rapidas_member_customer_read" on public.vendas_rapidas;
+drop policy if exists "vendas_rapidas_member_read" on public.vendas_rapidas;
 create policy "vendas_rapidas_owner_all" on public.vendas_rapidas
   for all to authenticated
   using (
@@ -363,12 +364,11 @@ create policy "vendas_rapidas_member_insert" on public.vendas_rapidas
     user_id = (select public.current_workspace_owner_id())
     and (select public.current_workspace_role()) = 'member'
   );
-create policy "vendas_rapidas_member_customer_read" on public.vendas_rapidas
+create policy "vendas_rapidas_member_read" on public.vendas_rapidas
   for select to authenticated
   using (
     user_id = (select public.current_workspace_owner_id())
     and (select public.current_workspace_role()) = 'member'
-    and cliente_id is not null
   );
 
 -- Numeração atômica de documentos (evita ORC-/FAT- duplicados)

@@ -12,7 +12,7 @@ Para equipes que precisam sair de anotações e planilhas dispersas e acompanhar
 - **Histórico por cliente:** consulta conjunta de orçamentos e vendas diretas do PDV associados ao cliente.
 - **Orçamentos:** montagem de itens, cálculo de valores, geração de PDF e compartilhamento.
 - **Faturas:** conversão de orçamento, registro de pagamentos, PIX e documentos para o cliente.
-- **PDV — venda rápida:** registro de vendas de balcão sem abrir orçamento ou iniciar produção.
+- **PDV — venda rápida:** registro de vendas de balcão sem abrir orçamento ou iniciar produção, com consulta das últimas vendas e seus totais para proprietário e equipe.
 - **Produção:** quadro de etapas para acompanhar cada trabalho até a entrega.
 - **Financeiro e relatórios:** gestão financeira e visão de resultados para o proprietário/administrador.
 - **Equipe:** contas de proprietário e colaboradores que trabalham nos mesmos dados da gráfica.
@@ -26,13 +26,14 @@ O sistema pode ser usado localmente em um navegador ou conectado ao Supabase par
 
 ## Solicitações do cliente e estado da atualização
 
-A conversa de 14/10/2026 trouxe dois pedidos, e em 22/10/2026 foi solicitado o histórico de pedidos por cliente. Os três recursos estão implementados no código deste repositório:
+A conversa de 14/10/2026 trouxe dois pedidos, e em 22/10/2026 foram solicitados o histórico por cliente e o acesso da equipe à lista de vendas rápidas. Os quatro recursos estão implementados no código deste repositório:
 
 1. Restringir a área financeira ao proprietário/administrador.
 2. Destacar no PDV, como favoritos, os produtos mais vendidos e localizar os demais pela busca.
 3. Consultar orçamentos e vendas diretas do PDV de cada cliente em seu histórico.
+4. Mostrar a lista de últimas vendas rápidas também para os colaboradores, com total, cliente, forma de pagamento, data e número.
 
-O escopo foi confirmado em 15/10/2026 e 22/10/2026: gestão e indicadores financeiros restritos ao proprietário, faturas e pagamentos operacionais liberados para a equipe, favoritos do PDV compartilhados pela gráfica e histórico de cliente visível a `owner` e `member`. A versão do repositório contém essas mudanças; para ativá-las no ambiente online, ainda é necessário aplicar as migrações Supabase pendentes e publicar o frontend. O que já está pronto e o que falta conferir está em [ROADMAP](ROADMAP.md), e as regras completas estão no [PRD](PRD.md).
+O escopo foi confirmado em 15/10/2026 e 22/10/2026: gestão e indicadores financeiros restritos ao proprietário, faturas e pagamentos operacionais liberados para a equipe, favoritos do PDV compartilhados pela gráfica, histórico por cliente e lista de vendas rápidas disponíveis a `owner` e `member`. A versão do repositório contém essas mudanças; para ativá-las no ambiente online, ainda é necessário aplicar as migrações Supabase pendentes e publicar o frontend. O que já está pronto e o que falta conferir está em [ROADMAP](ROADMAP.md), e as regras completas estão no [PRD](PRD.md).
 
 ## Documentação do projeto
 

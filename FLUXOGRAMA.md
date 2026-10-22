@@ -1,7 +1,7 @@
 # Fluxo do Gráfica Livre
 
 **Revisão:** 22/10/2026
-**Estado:** FIN-01, PDV-01 e HIST-01 implementados no código. Histórico conferido no modo local; migração e publicação online pendentes.
+**Estado:** FIN-01, PDV-01, HIST-01 e PDV-02 implementados no código. Histórico de cliente e lista conferidos no modo local; esse modo não simula `member`. Migrações e publicação online pendentes.
 **Regras detalhadas:** [PRD.md](PRD.md). Este desenho explica o caminho, não substitui os critérios de aceite.
 
 ## 1. Abrir o sistema e decidir o acesso
@@ -24,7 +24,7 @@ flowchart TD
     MEMBER --> M3[Histórico individual por cliente liberado]
 ```
 
-O menu e a rota bloqueiam as telas financeiras para `member`. RLS libera `contas_pagar` somente a `owner`; em `vendas_rapidas`, o colaborador pode inserir uma venda e ler apenas aquelas vinculadas a clientes. Faturas e pagamentos permanecem compartilhados porque são usados no atendimento e na cobrança.
+O menu e a rota bloqueiam as telas financeiras para `member`. RLS libera `contas_pagar` somente a `owner`; em `vendas_rapidas`, o colaborador pode inserir uma venda e consultar o histórico completo do próprio espaço. Faturas e pagamentos permanecem compartilhados porque são usados no atendimento e na cobrança.
 
 ### 1.1 O que acontece com uma venda rápida
 
@@ -38,12 +38,12 @@ flowchart TD
     ADD --> ROLE{Modo e papel}
     ROLE -->|Local| LOCAL[Salvar no navegador; sem separar usuários]
     ROLE -->|Supabase: owner| OWNER[Inserir e consultar vendas]
-    ROLE -->|Supabase: member| MEMBER[Inserir venda; ler apenas vendas vinculadas a clientes]
+    ROLE -->|Supabase: member| MEMBER[Inserir venda; consultar a lista de vendas da gráfica]
     MEMBER --> TOTAL[Ver total do carrinho para concluir]
     ASSOCIAR --> HIST[Venda fica disponível no histórico desse cliente]
 ```
 
-No Supabase, a RLS permite ao colaborador ler apenas vendas rápidas vinculadas a clientes; ele não altera/exclui vendas nem lê vendas sem cliente. No modo local, o navegador não identifica quem está usando o sistema.
+No Supabase, a RLS permite ao colaborador consultar as vendas rápidas do próprio espaço, inclusive as vendas sem cliente; não permite alteração ou exclusão. No modo local, o navegador não identifica quem está usando o sistema.
 
 ### 1.2 Consultar pedidos de um cliente
 
@@ -68,7 +68,7 @@ flowchart LR
     O -- Não --> OP[Quantidade/funil de orçamentos e lista operacional]
     P[PDV] --> P2{owner ou modo local?}
     P2 -- Sim --> PFIN[Indicador recebido hoje e totais no histórico]
-    P2 -- Não --> PQUIET[Sem indicador nem lista geral; venda continua com carrinho e total]
+    P2 -- Não --> PQUIET[Sem indicadores; vê últimas vendas com o total de cada uma]
     F[Faturas] --> F1[Valores, status e registro de pagamentos disponíveis]
     A[Assistente] --> A1{owner ou member?}
     A1 -- owner --> A2[Resumo financeiro e consultas do assistente]
@@ -123,12 +123,13 @@ Marcar um item como favorito não altera preço nem histórico. Se a equipe aind
 4. O valor e a quantidade da venda continuam no carrinho para finalizar o atendimento.
 5. Para um serviço que exige proposta, crie um orçamento, depois converta em fatura e acompanhe o card na Produção.
 6. Registre recebimentos na própria fatura. O colaborador não usa Contas a Receber; essa tela e Contas a Pagar ficam para o proprietário.
-7. Na lista de Clientes, clique em **Histórico** para consultar orçamentos e vendas do cliente. Ao registrar uma venda no PDV, selecione o cliente; vendas sem cliente não aparecem no histórico.
-8. O Dashboard de colaborador mostra o acompanhamento operacional sem entradas, despesas ou saldos financeiros consolidados.
+7. No PDV, o colaborador pode consultar as oito vendas rápidas mais recentes, incluindo as de balcão sem cliente e os totais individuais. Essa lista não é um painel de indicadores.
+8. Na lista de Clientes, clique em **Histórico** para consultar orçamentos e vendas associados ao cliente. Ao registrar uma venda no PDV, selecione o cliente para que ela apareça nesse histórico individual.
+9. O Dashboard de colaborador mostra o acompanhamento operacional sem entradas, despesas ou saldos financeiros consolidados.
 
 ## 6. Limites do modo local e da publicação
 
 - O modo local não sabe quem é proprietário ou colaborador; quem usa o mesmo perfil do navegador vê os mesmos dados.
 - No modo Supabase, os papéis `owner` e `member` são carregados da associação ativa da gráfica.
-- O bloqueio do acesso de `member` a `contas_pagar`, favoritos compartilhados e leitura de venda vinculada a cliente dependem das migrações SQL descritas em [DEPLOY.md](DEPLOY.md) no banco online.
+- O bloqueio do acesso de `member` a `contas_pagar`, favoritos compartilhados e permissão de leitura das vendas rápidas dependem das migrações SQL descritas em [DEPLOY.md](DEPLOY.md) no banco online.
 - Este fluxograma descreve a versão em código. Não significa que o ambiente de produção já recebeu a migração ou o frontend.

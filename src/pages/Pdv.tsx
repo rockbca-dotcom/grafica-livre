@@ -386,7 +386,7 @@ export default function Pdv() {
         </Card>
       </div>
 
-      {isOwner && <Card className="mt-5">
+      <Card className="mt-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold text-slate-700">Últimas vendas rápidas</h2>
@@ -405,7 +405,7 @@ export default function Pdv() {
                   <th className="px-3 py-2">Data</th>
                   <th className="px-3 py-2">Cliente</th>
                   <th className="px-3 py-2">Pagamento</th>
-                  {isOwner && <th className="px-3 py-2 text-right">Total</th>}
+                  <th className="px-3 py-2 text-right">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -415,14 +415,14 @@ export default function Pdv() {
                     <td className="px-3 py-2">{formatDateBR(venda.data)}</td>
                     <td className="px-3 py-2">{venda.clienteId ? clienteById(venda.clienteId)?.nome ?? 'Cliente removido' : 'Balcão'}</td>
                     <td className="px-3 py-2">{formaPagamentoLabel(venda.formaPagamento)}</td>
-                    {isOwner && <td className="px-3 py-2 text-right font-semibold">{formatCents(venda.total)}</td>}
+                    <td className="px-3 py-2 text-right font-semibold">{formatCents(venda.total)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </Card>}
+      </Card>
     </div>
   )
 }

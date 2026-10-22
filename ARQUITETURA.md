@@ -47,7 +47,7 @@ O ponto de entrada visual é `src/main.tsx`; `src/App.tsx` organiza os provedore
 | Produtos | Catálogo de produtos/serviços com preço por unidade, preço por m², descrição e estrela para favoritos compartilhados do PDV. | `itens` |
 | Orçamentos | Cria, edita, pesquisa, filtra, duplica, imprime/exporta em PDF, envia por e-mail/WhatsApp e converte em fatura. | `orcamentos` |
 | Faturas | Cria faturas diretamente ou a partir de orçamento; mostra status, PDF, guia, PIX, cobrança WhatsApp, e-mail e pagamentos. | `faturas`, `pagamentos` |
-| PDV | Venda de balcão sem orçamento/fatura; aceita item do catálogo ou item avulso, cliente opcional, forma de pagamento e observação. Sem busca, mostra favoritos da gráfica; se não houver favoritos, mostra todos. Com busca, pesquisa todos os itens. `member` pode inserir vendas, não vê indicadores nem a lista geral; sua venda vinculada a cliente pode ser consultada no histórico daquele cliente. O carrinho mantém o total para fechar a venda. | `vendas_rapidas`, `itens` |
+| PDV | Venda de balcão sem orçamento/fatura; aceita item do catálogo ou item avulso, cliente opcional, forma de pagamento e observação. Sem busca, mostra favoritos da gráfica; se não houver favoritos, mostra todos. Com busca, pesquisa todos os itens. `member` pode inserir vendas, não vê indicadores e consulta as oito vendas rápidas mais recentes com número, data, cliente/balcão, pagamento e total, inclusive sem cliente. A lista é somente leitura; o carrinho mantém o total para fechar a venda. | `vendas_rapidas`, `itens` |
 | Produção | Quadro Kanban com Arte → Impressão → Acabamento → Pronto → Entregue; cards manuais ou ligados a faturas. | `producao_cards` |
 | Contas a Receber | Rota disponível apenas para `owner`; lista faturas abertas, vencidas e próximas, registra/remove pagamentos e oferece cobrança. `member` registra pagamento dentro da tela Faturas. | `faturas`, `pagamentos` |
 | Contas a Pagar | Cadastra e quita despesas; rota e linhas do banco disponíveis apenas para `owner` (RLS). | `contas_pagar` |
@@ -94,7 +94,7 @@ O ponto de entrada visual é `src/main.tsx`; `src/App.tsx` organiza os provedore
 | `orcamentos` | Número, cliente, datas, itens, totais, termos e status. | Pode originar uma fatura; a referência é guardada na fatura. |
 | `faturas` | Documento de cobrança e status. | Tem pagamentos separados e pode originar card de produção. |
 | `pagamentos` | Data, valor, forma e observação recebidos. | Cada registro aponta para uma fatura. |
-| `vendas_rapidas` | Venda direta do balcão com itens e total. | Cliente opcional; não depende de fatura. Vendas com cliente aparecem no histórico desse cliente; vendas sem cliente não são listadas por `member`. |
+| `vendas_rapidas` | Venda direta do balcão com itens e total. | Cliente opcional; não depende de fatura. Todas as vendas aparecem na lista recente do PDV para `owner` e `member`; as que têm cliente também aparecem no histórico individual desse cliente. |
 | `contas_pagar` | Despesa e sua quitação. | Não existe tabela de parcelas de pagamento nesta versão. |
 | `producao_cards` | Trabalho e etapa do processo. | Pode referenciar fatura e cliente. |
 | `empresa` | Perfil, PIX, logo e numeração. | Uma linha por espaço de gráfica no Supabase; objeto único no navegador local. |
@@ -107,7 +107,7 @@ Os vínculos entre documentos são mantidos pela aplicação; várias colunas de
 | Modo | Como funciona | Limites importantes |
 |---|---|---|
 | Local | Um objeto JSON na chave `graficaLivre` do `localStorage` do navegador. | Não tem login, sincronização, cópia automática da aplicação nem permissão individual. Limpar dados do navegador pode apagar o sistema. |
-| Nuvem | Banco Supabase, acessado pelo cliente autenticado e protegido por RLS. | `owner` vê o financeiro. `member` não abre Contas a Receber, Contas a Pagar ou Relatórios; RLS restringe `contas_pagar` a `owner`, permite inserir venda e consultar somente vendas rápidas com cliente. Faturas, pagamentos e itens continuam compartilhados para operação e favoritos. |
+| Nuvem | Banco Supabase, acessado pelo cliente autenticado e protegido por RLS. | `owner` vê os indicadores e módulos financeiros. `member` não abre Contas a Receber, Contas a Pagar ou Relatórios; RLS restringe `contas_pagar` a `owner`, permite inserir venda e consultar vendas rápidas do próprio espaço. Faturas, pagamentos e itens continuam compartilhados para operação e favoritos. |
 
 O adaptador traduz `camelCase` do TypeScript para `snake_case` do banco. Favoritos usam `itens.favorito`, são compartilhados entre membros e itens/backups antigos sem o campo são lidos como não favoritos.
 
@@ -117,7 +117,7 @@ O adaptador traduz `camelCase` do TypeScript para `snake_case` do banco. Favorit
 - O primeiro login pode criar o espaço de proprietário por `ensure_workspace_membership()`; as credenciais de colaboradores são criadas pelo servidor na função `gerenciar-colaboradores`.
 - A criação, revogação e reativação de usuários é validada no backend como operação de `owner`.
 - `current_workspace_role()` devolve o papel ativo da sessão; `current_workspace_owner_id()` deixa de aceitar associações `invited` ou `revoked`.
-- RLS restringe `contas_pagar` a `owner`. `vendas_rapidas` pode ser inserida por membro; a política HIST-01 permite ao membro ler somente as linhas vinculadas a cliente, sem alterar/excluir e sem ler as vendas sem cliente. O histórico de cliente é uma junção visual das coleções `orcamentos` e `vendas_rapidas`, filtradas por `clienteId`, na tela Clientes. Tabelas `faturas`/`pagamentos` continuam compartilhadas: sustentam a tela Faturas permitida aos membros. Contas a Receber é bloqueada na interface/rota, mas não tem tabela isolada própria.
+- RLS restringe `contas_pagar` a `owner`. `vendas_rapidas` pode ser inserida por membro e, conforme PDV-02, lida integralmente por membro no mesmo espaço, mas não atualizada ou excluída. A lista do PDV mostra as oito mais recentes; o histórico de cliente é uma junção visual das coleções `orcamentos` e `vendas_rapidas`, filtradas por `clienteId`, na tela Clientes. Tabelas `faturas`/`pagamentos` continuam compartilhadas: sustentam a tela Faturas permitida aos membros. Contas a Receber é bloqueada na interface/rota, mas não tem tabela isolada própria.
 - A equipe ainda não pode ser controlada no modo local.
 - O cadastro público do Supabase deve permanecer desligado na instalação orientada pelo [DEPLOY](DEPLOY.md).
 
@@ -141,5 +141,5 @@ Guarde segredos no cofre e no ambiente do provedor. O mapa de nomes e responsáv
 - Não há estoque, compras automatizadas, conciliação bancária ou controle de caixa por operador.
 - Não há suíte automatizada de testes configurada.
 - O modo local não separa permissões por papel; favoritos são compartilhados no armazenamento daquele navegador.
-- A aplicação das migrações pendentes, incluindo `20261022120000_historico_pedidos_cliente.sql`, no banco online e a publicação do frontend ainda estão pendentes.
+- A aplicação das migrações pendentes, incluindo `20261022120000_historico_pedidos_cliente.sql` e `20261022130000_vendas_rapidas_member_history.sql`, no banco online e a publicação do frontend ainda estão pendentes.
 - O estado atual do sistema e os achados de segurança/qualidade estão em [AUDITORIA.md](AUDITORIA.md).

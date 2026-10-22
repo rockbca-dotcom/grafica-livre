@@ -1,6 +1,6 @@
 # ROADMAP — pedidos do cliente
 
-**Estado:** FIN-01, PDV-01 e HIST-01 implementados no código. O histórico foi validado manualmente no modo local; aplicação das migrações pendentes no Supabase e publicação do frontend continuam necessárias para ativar a versão online.
+**Estado:** FIN-01, PDV-01, HIST-01 e PDV-02 implementados no código. O histórico e a lista do PDV foram conferidos manualmente no modo local; esse modo não simula o papel `member`. Aplicação das migrações pendentes no Supabase e publicação do frontend continuam necessárias para ativar a versão online.
 **Fonte:** conversa exportada do WhatsApp em 14/10/2026 e nova mensagem do cliente em 22/10/2026.
 **Detalhamento e decisões de negócio:** [PRD.md](PRD.md).
 
@@ -22,7 +22,7 @@
 - [x] Bloquear as mesmas rotas para `member`, inclusive ao digitar o endereço diretamente.
 - [x] Aplicar RLS de `owner` à tabela `contas_pagar`.
 - [x] Manter o carregamento operacional para faturas e pagamentos e bloquear Contas a Pagar sem travar os demais dados.
-- [x] Ocultar indicadores financeiros do Dashboard/PDV e limitar resumos financeiros do assistente; manter a lista geral do PDV restrita e permitir ao membro consultar vendas vinculadas a clientes conforme HIST-01.
+- [x] Ocultar indicadores financeiros do Dashboard/PDV e limitar resumos financeiros do assistente; manter a lista de últimas vendas rápidas disponível para `member`, sem gestão de Contas a Pagar, Contas a Receber ou Relatórios.
 - [x] Manter acesso do `owner` e faturas, valores, pagamentos e venda do PDV para `member`.
 
 **Dependência:** Etapa 0.
@@ -41,7 +41,7 @@
 **Dependência:** confirmação sobre compartilhamento.
 **Aceite:** critérios de `PDV-01` em [PRD.md](PRD.md).
 
-### Etapa 3 — Conferir, documentar e publicar FIN-01 e PDV-01
+### Etapa 3 — Conferir, documentar e publicar FIN-01, PDV-01 e PDV-02
 
 - [x] Executar `npm run lint` e `npm run build`; ambos concluíram com código 0 (avisos registrados em [AUDITORIA.md](AUDITORIA.md)).
 - [ ] Conferir manualmente os cenários de proprietário, colaborador e acesso direto às rotas.
@@ -58,11 +58,22 @@
 - [x] Manter relatórios, Contas a Pagar e indicadores consolidados restritos conforme FIN-01.
 - [x] Adicionar ação **Histórico** à tela de Clientes e listar registros do cliente do mais recente ao mais antigo.
 - [x] Exibir tipo, data, número, itens, total e status; orçamento convertido aparece uma vez com status `faturado`.
-- [x] Ajustar RLS para permitir que `member` consulte vendas rápidas associadas a clientes; manter vendas sem cliente fora da leitura do colaborador.
+- [x] Permitir que `member` consulte no histórico de cliente as vendas vinculadas a esse cliente; a solicitação PDV-02 ampliou depois a leitura para todas as vendas rápidas do espaço.
 - [x] Conferir localmente um orçamento e uma venda direta vinculados ao mesmo cliente.
 - [x] Atualizar fluxograma, arquitetura e guias com o comportamento implementado.
 - [ ] Validar a política RLS numa instância Supabase e testar os papéis no modo nuvem.
 - [ ] Aplicar a migração no banco online e publicar a versão atualizada.
+
+### Etapa 5 — Liberar a lista de vendas rápidas para colaboradores
+
+- [x] Mostrar no PDV para `member` as oito vendas rápidas mais recentes e o contador total.
+- [x] Exibir número, data, cliente ou balcão, forma de pagamento e total, inclusive nas vendas sem cliente.
+- [x] Permitir leitura das linhas de vendas rápidas do próprio espaço pela RLS, sem autorizar edição ou exclusão para `member`.
+- [x] Conferir no navegador local a lista, as colunas e o total individual da venda exibida.
+- [ ] Validar a lista e a política RLS com uma sessão de colaborador no Supabase.
+- [ ] Aplicar a migração `20261022130000_vendas_rapidas_member_history.sql` e publicar o frontend.
+
+**Aceite:** critérios de `PDV-02` em [PRD.md](PRD.md).
 
 **Aceite:** critérios de `HIST-01` em [PRD.md](PRD.md).
 
@@ -70,7 +81,7 @@
 
 ```text
 Confirmações do cliente
-        ├──> Permissões financeiras no frontend, no assistente e no Supabase
+        ├──> Permissões financeiras e consulta das vendas rápidas conforme FIN-01/PDV-02
         ├──> Favoritos compartilhados no catálogo e no PDV
         └──> Histórico de pedidos por cliente para owner/member
                  └──> Implementação concluída; validação em nuvem e publicação pendentes

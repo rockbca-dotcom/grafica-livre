@@ -45,7 +45,7 @@ Faça nesta ordem:
 | Dashboard | O proprietário vê entradas, saldos, despesas e vencimentos. O colaborador vê o funil e a quantidade de orçamentos, sem indicadores financeiros consolidados. |
 | Orçamentos | Criar/editar, pesquisar, filtrar, duplicar, gerar PDF, enviar e-mail/WhatsApp e converter em fatura. |
 | Faturas | Acompanhar cobrança, gerar PDF/guia, PIX, enviar e-mail/WhatsApp, registrar recebimento e excluir. |
-| PDV — Venda rápida | Registrar venda sem orçamento. Na abertura, aparecem os favoritos compartilhados; se não houver nenhum, aparecem todos os produtos. A busca procura o catálogo inteiro. Escolha produtos, quantidades e pagamento; o carrinho mostra o total para finalizar a venda. |
+| PDV — Venda rápida | Registrar venda sem orçamento. Na abertura, aparecem os favoritos compartilhados; se não houver nenhum, aparecem todos os produtos. A busca procura o catálogo inteiro. Escolha produtos, quantidades e pagamento; o carrinho mostra o total para finalizar a venda. Abaixo do caixa, `owner` e `member` consultam as oito últimas vendas com número, data, cliente ou balcão, forma de pagamento e total individual. |
 | Produção | Acompanhar e mover serviços por cinco etapas. Cards vinculados à fatura exibem o cliente e os dados do trabalho. |
 | Contas a Receber | Proprietário: ver saldos, vencimentos e preparar cobrança. Colaborador: use Faturas para consultar valores e registrar/remover pagamentos. |
 | Contas a Pagar | Proprietário cadastra despesa e vencimento, marca como paga, edita ou exclui. |
@@ -65,7 +65,7 @@ O modo nuvem precisa do Supabase. Há dois papéis no código:
 
 O proprietário cria contas pela tela Equipe. A senha inicial é definida no cadastro e deve ser entregue por canal seguro. A criação exige nome, e-mail, data de nascimento, função e senha. O acesso fica ativo imediatamente. O proprietário também pode revogar ou reativar uma conta.
 
-No modo Supabase, apenas `owner` abre Contas a Receber, Contas a Pagar e Relatórios. A tabela de despesas também é restrita no banco. O colaborador mantém acesso a Faturas, valores e pagamentos para executar o atendimento e pode consultar vendas do PDV que estejam vinculadas a clientes na tela **Clientes → Histórico**. A lista geral do PDV e vendas sem cliente continuam fora do acesso do colaborador. No modo local, não há login nem controle de papel; quem usa o mesmo navegador vê os mesmos dados.
+No modo Supabase, apenas `owner` abre Contas a Receber, Contas a Pagar e Relatórios. A tabela de despesas também é restrita no banco. O colaborador mantém acesso a Faturas, valores e pagamentos para executar o atendimento; pode consultar as últimas vendas rápidas no PDV, inclusive as de balcão sem cliente, e o histórico por cliente em **Clientes → Histórico**. Essa consulta não permite alterar ou excluir vendas. No modo local, não há login nem controle de papel; quem usa o mesmo navegador vê os mesmos dados.
 
 ## Backup, exportação e restauração
 
@@ -90,5 +90,5 @@ O assistente é opcional. A empresa deve autorizar o uso de serviços externos p
 
 - Não emite nota fiscal e não substitui ERP fiscal.
 - Não controla estoque, compras, conciliação bancária ou caixa separado por operador.
-- As migrações `20261015120000_favoritos_e_acesso_financeiro.sql` e `20261022120000_historico_pedidos_cliente.sql` precisam ser aplicadas ao banco Supabase existente para salvar favoritos, restringir Contas a Pagar e habilitar a consulta de vendas por cliente.
+- As migrações `20261015120000_favoritos_e_acesso_financeiro.sql`, `20261022120000_historico_pedidos_cliente.sql` e `20261022130000_vendas_rapidas_member_history.sql` precisam ser aplicadas ao banco Supabase existente para salvar favoritos, restringir Contas a Pagar e habilitar as consultas de venda por cliente e a lista do PDV para colaboradores.
 - Código no repositório não confirma que o frontend ou o banco online já foram publicados; veja [ROADMAP.md](ROADMAP.md).
