@@ -185,8 +185,13 @@ body {
 }
 
 .app-menu-toggle {
-  background: #2d0b7a;
-  box-shadow: 0 6px 18px rgb(45 11 122 / 0.25);
+  background: #7c3aed;
+  color: #fff;
+  box-shadow: 0 6px 18px rgb(91 33 182 / 0.25);
+}
+
+.app-menu-toggle:hover {
+  background: #6d28d9;
 }
 
 .app-pdv-catalog-header {
