@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -14,7 +14,6 @@
   --color-ash: #c2c2c2;
   --color-onyx: #000000;
   --color-lilac-veil: #e2e9f6;
-  --font-aeonik: "DM Sans", "Aeonik", ui-sans-serif, system-ui, sans-serif;
   --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -42,27 +41,65 @@ body {
 }
 
 .landing-page {
-  font-family: var(--font-aeonik);
+  --color-indigo-ink: #180b34;
+  --color-cobalt-signal: #5b21b6;
+  --color-mist-gray: #f3f4f6;
+  --color-graphite: #625d73;
+  --color-stone: #625d73;
+  --color-ash: #e4e4eb;
+  --color-lilac-veil: #f3e8ff;
+  --landing-brand-deep: #2d0b7a;
+  --font-marketing: 'Montserrat', Arial, sans-serif;
+  font-family: var(--font-inter);
+}
+
+.landing-page :is(h1, h2, h3) {
+  font-family: var(--font-marketing);
+}
+
+.landing-page :focus-visible {
+  outline: 3px solid #7c3aed;
+  outline-offset: 3px;
+}
+
+.landing-flow-section {
+  background-color: var(--landing-brand-deep);
+}
+
+.landing-cta-accent {
+  background: linear-gradient(
+    115deg,
+    rgb(124 58 237 / 0.12),
+    rgb(236 72 153 / 0.08),
+    rgb(249 115 22 / 0.05)
+  );
 }
 
 .landing-grid {
   background-image:
-    linear-gradient(rgba(32, 41, 90, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(32, 41, 90, 0.035) 1px, transparent 1px);
+    linear-gradient(rgba(45, 11, 122, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 11, 122, 0.035) 1px, transparent 1px);
   background-position: center top;
-  background-size: 44px 44px;
-  mask-image: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
+  background-size: 48px 48px;
 }
 
 .landing-reveal {
-  animation: fade-up 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: fade-up 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .landing-reveal-delayed {
-  animation: fade-up 800ms 120ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: fade-up 220ms 80ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .landing-page *,
+  .landing-page *::before,
+  .landing-page *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .landing-reveal,
   .landing-reveal-delayed {
     animation: none;

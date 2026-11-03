@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import orcamentosShot from '../assets/screens/orcamentos.webp'
 import faturasShot from '../assets/screens/faturas.webp'
-import heroShot from '../assets/hero-graficaup.png'
+import heroShot from '../assets/hero-graficaup-v2.png'
 
 const iconProps = {
   width: 20,
@@ -103,20 +103,20 @@ const STEPS = [
 ]
 
 function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+  document.getElementById(id)?.scrollIntoView({ behavior, block: 'start' })
 }
 
-function BrandMark({ light = false }: { light?: boolean }) {
+function BrandMark({ className = '' }: { className?: string }) {
   return (
-    <span className="flex items-center gap-2.5" aria-label="GraficaUp Studio">
-      <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-cobalt-signal text-base font-bold text-white shadow-[0_5px_14px_rgba(46,98,255,0.2)]">
-        G
-        <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-paper-white bg-electric-blue" />
-      </span>
-      <span className={`text-[17px] font-bold tracking-[-0.04em] ${light ? 'text-paper-white' : 'text-indigo-ink'}`}>
-        GraficaUp <span className={light ? 'text-[#a9c0ff]' : 'text-cobalt-signal'}>Studio</span>
-      </span>
-    </span>
+    <img
+      src="/brand/graficaup-logo-horizontal-dark.png"
+      alt="GraficaUp Studio"
+      width={2172}
+      height={724}
+      decoding="async"
+      className={`block h-auto ${className}`}
+    />
   )
 }
 
@@ -134,12 +134,12 @@ function BrowserFrame({
   label?: string
 }) {
   return (
-    <div className="relative rounded-[24px] border border-ash/60 bg-paper-white p-2 shadow-[0_24px_64px_rgba(32,41,90,0.12)] sm:p-3">
+    <div className="relative rounded-2xl border border-ash/60 bg-paper-white p-2 shadow-[0_2px_10px_rgba(24,11,52,0.045)] sm:p-3">
       <div className="flex items-center gap-1.5 px-2 pb-3 pt-1 sm:px-3">
         <span className="h-2.5 w-2.5 rounded-full bg-[#f4a2a2]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#f4d28b]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#a9d7c4]" />
-        <span className="ml-3 hidden flex-1 rounded-lg border border-mist-gray bg-mist-gray/75 px-3 py-1 text-[11px] text-graphite sm:block">
+        <span className="ml-3 hidden flex-1 rounded-[10px] border border-mist-gray bg-mist-gray/75 px-3 py-1 text-xs text-graphite sm:block">
           {label}
         </span>
       </div>
@@ -150,11 +150,11 @@ function BrowserFrame({
         decoding="async"
         width={1536}
         height={1024}
-        className="block aspect-[16/10] w-full rounded-[16px] object-cover object-top"
+        className="block aspect-[16/10] w-full rounded-xl object-cover object-top"
       />
       {badge ? (
-        <div className="absolute bottom-5 right-5 max-w-[min(80%,18rem)] rounded-xl border border-white/70 bg-white/95 px-4 py-3 text-left shadow-[0_8px_28px_rgba(32,41,90,0.14)] backdrop-blur sm:bottom-7 sm:right-7">
-          <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-graphite">
+        <div className="absolute bottom-5 right-5 max-w-[min(80%,18rem)] rounded-[10px] border border-white/70 bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(24,11,52,0.08)] sm:bottom-7 sm:right-7">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-graphite">
             <span className="h-2 w-2 rounded-full bg-cobalt-signal" />
             Fluxo conectado
           </p>
@@ -167,7 +167,7 @@ function BrowserFrame({
 
 function FeatureCard({ icon, titulo, texto }: { icon: ReactNode; titulo: string; texto: string }) {
   return (
-    <article className="group rounded-lg border border-ash/55 bg-paper-white p-6 transition duration-300 hover:-translate-y-1 hover:border-cobalt-signal/35 hover:shadow-[0_14px_36px_rgba(32,41,90,0.07)] sm:p-7">
+    <article className="group rounded-2xl border border-ash/55 bg-paper-white p-6 shadow-[0_2px_10px_rgba(24,11,52,0.045)] transition duration-200 hover:-translate-y-1 hover:border-cobalt-signal/35 hover:shadow-[0_8px_24px_rgba(24,11,52,0.08)] sm:p-7">
       <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-lilac-veil text-indigo-ink transition-colors group-hover:bg-indigo-ink group-hover:text-paper-white">
         {icon}
       </div>
@@ -188,10 +188,10 @@ function CheckIcon() {
 export default function Landing() {
   return (
     <div className="landing-page min-h-screen overflow-hidden bg-mist-gray text-indigo-ink">
-      <header className="sticky top-0 z-40 border-b border-ash/40 bg-paper-white/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-ash bg-paper-white shadow-sm">
         <div className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between px-4 sm:px-6">
           <Link to="/" aria-label="GraficaUp Studio — página inicial">
-            <BrandMark />
+            <BrandMark className="w-[140px] sm:w-[180px]" />
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium text-graphite md:flex" aria-label="Navegação principal">
             <button type="button" onClick={() => scrollToSection('recursos')} className="transition hover:text-indigo-ink">
@@ -206,7 +206,7 @@ export default function Landing() {
           </nav>
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 rounded-xl bg-cobalt-signal px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#2455e8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt-signal sm:px-5"
+            className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-cobalt-signal px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#4c1d95] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt-signal sm:px-5"
           >
             Acessar sistema <span aria-hidden="true">↗</span>
           </Link>
@@ -215,12 +215,10 @@ export default function Landing() {
 
       <main>
         <section className="landing-grid relative px-4 pb-16 pt-12 sm:px-6 sm:pb-20 sm:pt-16 lg:pt-20">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-20 top-12 h-72 w-72 rounded-full bg-lilac-veil/80 blur-3xl" />
-          <div aria-hidden="true" className="pointer-events-none absolute -left-24 bottom-0 h-64 w-64 rounded-full bg-white/80 blur-3xl" />
           <div className="relative mx-auto grid max-w-[1200px] items-center gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-14">
             <div className="landing-reveal relative z-10 max-w-[570px]">
-              <p className="inline-flex items-center gap-2 rounded-full border border-ash/50 bg-paper-white/85 px-4 py-2 text-xs font-semibold tracking-[0.03em] text-indigo-ink shadow-[0_3px_12px_rgba(32,41,90,0.04)] sm:text-sm">
-                <span className="h-2 w-2 rounded-full bg-cobalt-signal" />
+              <p className="inline-flex items-center gap-2 rounded-full border border-ash bg-paper-white px-4 py-2 text-xs font-semibold tracking-[0.03em] text-indigo-ink shadow-[0_2px_10px_rgba(24,11,52,0.045)] sm:text-sm">
+                <span className="h-2 w-2 rounded-full bg-gradient-to-r from-[#7c3aed] via-[#ec4899] to-[#f97316]" />
                 Gestão feita para gráficas
               </p>
               <h1 className="mt-6 text-[clamp(2.75rem,5.6vw,4.25rem)] font-bold leading-[0.99] tracking-[-0.055em] text-indigo-ink">
@@ -233,14 +231,14 @@ export default function Landing() {
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-2 rounded-xl bg-cobalt-signal px-6 py-3.5 text-base font-semibold text-white shadow-[0_8px_20px_rgba(46,98,255,0.2)] transition hover:-translate-y-0.5 hover:bg-[#2455e8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt-signal"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-cobalt-signal px-6 py-3.5 text-base font-semibold text-white shadow-[0_2px_10px_rgba(24,11,52,0.12)] transition-colors duration-150 hover:bg-[#4c1d95] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt-signal"
                 >
                   Acessar o sistema <span aria-hidden="true">→</span>
                 </Link>
                 <button
                   type="button"
                   onClick={() => scrollToSection('recursos')}
-                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-ink/20 bg-paper-white px-5 py-3.5 text-sm font-semibold text-indigo-ink transition hover:border-indigo-ink/40 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt-signal"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-indigo-ink/20 bg-paper-white px-5 py-3.5 text-sm font-semibold text-indigo-ink transition-colors duration-150 hover:border-indigo-ink/40 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt-signal"
                 >
                   Explorar recursos
                 </button>
@@ -263,11 +261,11 @@ export default function Landing() {
                   src={heroShot}
                   eager
                   label="Sua gráfica, em um só fluxo"
-                  alt="Materiais impressos e painel ilustrando o fluxo de trabalho do GraficaUp Studio"
+                  alt="Materiais gráficos impressos em roxo, violeta, magenta, laranja e amarelo"
                   badge="Do orçamento até a entrega"
                 />
-                <div className="absolute -bottom-5 -left-2 hidden max-w-[230px] rounded-xl border border-ash/50 bg-paper-white px-4 py-3 shadow-[0_12px_32px_rgba(32,41,90,0.12)] sm:block lg:-left-7">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-graphite">Rotina organizada</p>
+                <div className="absolute -bottom-5 -left-2 hidden max-w-[230px] rounded-[10px] border border-ash bg-paper-white px-4 py-3 shadow-[0_2px_10px_rgba(24,11,52,0.08)] sm:block lg:-left-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-graphite">Rotina organizada</p>
                   <p className="mt-1 text-sm font-semibold text-indigo-ink">Cliente · produção · caixa</p>
                 </div>
               </div>
@@ -275,9 +273,9 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="relative z-10 px-4 pb-16 sm:px-6 sm:pb-20">
-          <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-x-4 gap-y-3 rounded-2xl border border-ash/45 bg-paper-white px-5 py-5 sm:gap-x-7 sm:px-8">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-stone">Um fluxo conectado</span>
+        <section className="landing-flow-section relative z-10 px-4 py-6 sm:px-6 sm:py-7">
+          <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-x-4 gap-y-3 sm:gap-x-7">
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/70">Um fluxo conectado</span>
             {[
               ['01', 'Cliente'],
               ['02', 'Orçamento'],
@@ -285,10 +283,10 @@ export default function Landing() {
               ['04', 'Financeiro'],
             ].map(([numero, etapa], index) => (
               <div key={etapa} className="flex items-center gap-3">
-                <span className="flex items-center gap-2 text-sm font-semibold text-indigo-ink">
-                  <span className="text-xs font-medium text-cobalt-signal">{numero}</span>{etapa}
+                <span className="flex items-center gap-2 text-sm font-semibold text-white">
+                  <span className="text-xs font-semibold text-[#d8c7ff]">{numero}</span>{etapa}
                 </span>
-                {index < 3 && <span className="hidden text-ash sm:inline" aria-hidden="true">/</span>}
+                {index < 3 && <span className="hidden text-white/35 sm:inline" aria-hidden="true">/</span>}
               </div>
             ))}
           </div>
@@ -313,7 +311,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section id="como-funciona" className="scroll-mt-24 bg-mist-gray py-20 sm:py-24">
+        <section id="como-funciona" className="scroll-mt-24 bg-lilac-veil py-20 sm:py-24">
           <div className="mx-auto grid max-w-[1200px] gap-10 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-16">
             <div className="max-w-[450px]">
               <p className="text-xs font-bold uppercase tracking-[0.15em] text-cobalt-signal">Como funciona</p>
@@ -332,7 +330,7 @@ export default function Landing() {
             </div>
             <div className="grid gap-3">
               {STEPS.map((step) => (
-                <article key={step.numero} className="grid gap-3 rounded-xl border border-ash/50 bg-paper-white p-5 sm:grid-cols-[72px_1fr] sm:items-center sm:gap-5 sm:p-6">
+                <article key={step.numero} className="grid gap-3 rounded-2xl border border-ash bg-paper-white p-5 shadow-[0_2px_10px_rgba(24,11,52,0.045)] sm:grid-cols-[72px_1fr] sm:items-center sm:gap-5 sm:p-6">
                   <span className="text-3xl font-bold tracking-[-0.055em] text-cobalt-signal">{step.numero}</span>
                   <div>
                     <h3 className="text-lg font-bold tracking-[-0.025em] text-indigo-ink">{step.titulo}</h3>
@@ -344,19 +342,19 @@ export default function Landing() {
           </div>
         </section>
 
-        <section id="sistema" className="scroll-mt-24 bg-paper-white py-20 sm:py-24">
+        <section id="sistema" className="scroll-mt-24 bg-[#2d0b7a] py-20 text-white sm:py-24">
           <div className="mx-auto flex max-w-[1200px] flex-col gap-20 px-4 sm:px-6">
             <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
               <div className="max-w-[500px]">
-                <p className="text-xs font-bold uppercase tracking-[0.15em] text-cobalt-signal">Orçamentos</p>
-                <h2 className="mt-4 text-[clamp(2rem,3.6vw,3rem)] font-bold leading-[1.08] tracking-[-0.045em] text-indigo-ink">
+                <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#d8c7ff]">Orçamentos</p>
+                <h2 className="mt-4 text-[clamp(2rem,3.6vw,3rem)] font-bold leading-[1.08] tracking-[-0.045em] text-white">
                   Mais rapidez para montar e enviar cada proposta.
                 </h2>
-                <p className="mt-4 text-base leading-7 text-graphite sm:text-lg sm:leading-8">
+                <p className="mt-4 text-base leading-7 text-white/75 sm:text-lg sm:leading-8">
                   Organize medidas, itens e valores em documentos profissionais. Compartilhe com o cliente e acompanhe a aprovação sem redigitar informações.
                 </p>
-                <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-indigo-ink">
-                  <span className="text-cobalt-signal"><CheckIcon /></span> Do orçamento aprovado à próxima etapa
+                <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-white">
+                  <span className="text-[#d8c7ff]"><CheckIcon /></span> Do orçamento aprovado à próxima etapa
                 </p>
               </div>
               <BrowserFrame src={orcamentosShot} alt="Tela de orçamentos do GraficaUp Studio" badge="Propostas organizadas" label="Orçamentos" />
@@ -364,15 +362,15 @@ export default function Landing() {
 
             <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
               <div className="max-w-[500px] lg:order-2 lg:ml-auto">
-                <p className="text-xs font-bold uppercase tracking-[0.15em] text-cobalt-signal">Financeiro</p>
-                <h2 className="mt-4 text-[clamp(2rem,3.6vw,3rem)] font-bold leading-[1.08] tracking-[-0.045em] text-indigo-ink">
+                <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#d8c7ff]">Financeiro</p>
+                <h2 className="mt-4 text-[clamp(2rem,3.6vw,3rem)] font-bold leading-[1.08] tracking-[-0.045em] text-white">
                   Saiba o que entra, sai e ainda precisa acontecer.
                 </h2>
-                <p className="mt-4 text-base leading-7 text-graphite sm:text-lg sm:leading-8">
+                <p className="mt-4 text-base leading-7 text-white/75 sm:text-lg sm:leading-8">
                   Acompanhe vencimentos, cobranças e pagamentos parciais numa visão direta — para planejar os próximos pedidos com mais segurança.
                 </p>
-                <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-indigo-ink">
-                  <span className="text-cobalt-signal"><CheckIcon /></span> Uma visão mais clara do caixa
+                <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-white">
+                  <span className="text-[#d8c7ff]"><CheckIcon /></span> Uma visão mais clara do caixa
                 </p>
               </div>
               <div className="lg:order-1">
@@ -383,10 +381,10 @@ export default function Landing() {
         </section>
 
         <section className="bg-mist-gray px-4 py-20 sm:px-6 sm:py-24">
-          <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-[32px] border border-ash/40 bg-paper-white px-6 py-12 text-center sm:px-12 sm:py-16">
-            <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-lilac-veil/80 blur-3xl" />
+          <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-3xl border border-ash bg-paper-white px-6 py-12 text-center shadow-[0_2px_10px_rgba(24,11,52,0.045)] sm:px-12 sm:py-16">
+            <div aria-hidden="true" className="landing-cta-accent pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full" />
             <div className="relative mx-auto max-w-[720px]">
-              <BrandMark />
+              <BrandMark className="mx-auto w-[170px] sm:w-[200px]" />
               <h2 className="mt-7 text-[clamp(2rem,4vw,3.5rem)] font-bold leading-[1.06] tracking-[-0.045em] text-indigo-ink">
                 Sua próxima etapa começa com mais clareza.
               </h2>
@@ -395,7 +393,7 @@ export default function Landing() {
               </p>
               <Link
                 to="/login"
-                className="mt-8 inline-flex items-center gap-2 rounded-xl bg-cobalt-signal px-6 py-3.5 text-base font-semibold text-white shadow-[0_8px_20px_rgba(46,98,255,0.2)] transition hover:-translate-y-0.5 hover:bg-[#2455e8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt-signal"
+                className="mt-8 inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-cobalt-signal px-6 py-3.5 text-base font-semibold text-white shadow-[0_2px_10px_rgba(24,11,52,0.12)] transition-colors duration-150 hover:bg-[#4c1d95] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt-signal"
               >
                 Acessar o sistema <span aria-hidden="true">→</span>
               </Link>
@@ -407,7 +405,7 @@ export default function Landing() {
       <footer className="border-t border-ash/40 bg-paper-white px-4 py-9 sm:px-6">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <BrandMark />
+            <BrandMark className="w-[150px] sm:w-[180px]" />
             <p className="mt-2 text-sm text-graphite">Gestão comercial para gráficas.</p>
           </div>
           <div className="flex items-center gap-6 text-sm text-graphite">
