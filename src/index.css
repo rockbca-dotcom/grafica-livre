@@ -62,6 +62,203 @@ body {
   outline-offset: 3px;
 }
 
+/* Identidade visual do painel interno: mantém a landing pública independente. */
+.app-shell {
+  --color-blue-50: #faf7ff;
+  --color-blue-100: #f3e8ff;
+  --color-blue-200: #e9d5ff;
+  --color-blue-300: #d8b4fe;
+  --color-blue-400: #a78bfa;
+  --color-blue-500: #8b5cf6;
+  --color-blue-600: #7c3aed;
+  --color-blue-700: #6d28d9;
+  --color-blue-800: #5b21b6;
+  --color-blue-900: #2d0b7a;
+  --brand-violet: #7c3aed;
+  --brand-violet-deep: #2d0b7a;
+  --brand-pink: #ec4899;
+  --brand-orange: #f97316;
+  --brand-yellow: #facc15;
+  --app-line: #e9e4f0;
+  min-height: 100vh;
+  background: #f7f5fa;
+  color: #211a2f;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.login-page {
+  background:
+    radial-gradient(circle at 14% 18%, rgb(236 72 153 / 0.075), transparent 24rem),
+    radial-gradient(circle at 88% 86%, rgb(124 58 237 / 0.11), transparent 28rem),
+    linear-gradient(135deg, #f3e8ff 0%, #faf7ff 56%, #f3f4f6 100%);
+}
+
+.login-card {
+  border: 1px solid #e9d5ff;
+  box-shadow: 0 24px 64px rgb(45 11 122 / 0.12);
+}
+
+.login-page h1 {
+  font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+}
+
+.login-page :is(input, select, textarea):focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgb(124 58 237 / 0.15);
+}
+
+.login-page button[class~="bg-blue-600"] {
+  background-color: #7c3aed;
+  box-shadow: 0 5px 14px rgb(91 33 182 / 0.2);
+}
+
+.login-page button[class~="bg-blue-600"]:hover:not(:disabled) {
+  background-color: #6d28d9;
+  box-shadow: 0 7px 18px rgb(91 33 182 / 0.25);
+}
+
+.app-shell :is(h1, h2, h3, h4) {
+  font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.025em;
+}
+
+.app-shell main {
+  background:
+    radial-gradient(ellipse at 92% 0%, rgb(124 58 237 / 0.055), transparent 30rem),
+    #f7f5fa;
+}
+
+.app-sidebar {
+  background: #f3f4f6;
+  color: #2d0b7a;
+  box-shadow: 8px 0 28px rgb(45 11 122 / 0.055);
+  border-right: 1px solid #e7e1ee;
+}
+
+.app-sidebar > div:first-child {
+  border-color: #e5deeb;
+  padding-top: 1.5rem;
+  padding-bottom: 1.35rem;
+}
+
+.app-sidebar-brand img {
+  height: auto;
+}
+
+.app-sidebar > div:first-child p {
+  color: #70647f;
+}
+
+.app-sidebar nav {
+  gap: 0.25rem;
+  padding-top: 0.65rem;
+  max-height: calc(100vh - 14rem);
+}
+
+.app-nav-link {
+  border: 1px solid transparent;
+}
+
+.app-nav-link-active {
+  background: linear-gradient(120deg, #7c3aed, #6429c7);
+  box-shadow: 0 6px 18px rgb(11 3 36 / 0.24), inset 0 1px rgb(255 255 255 / 0.18);
+}
+
+.app-nav-link-idle {
+  color: #493c62;
+}
+
+.app-nav-link-idle:hover {
+  border-color: #e5d8f2;
+  background: #eee6f8;
+  color: #2d0b7a;
+}
+
+.app-sidebar > div:last-child {
+  border-color: #e5deeb;
+  background: #eceaf1;
+  line-height: 1.55;
+}
+
+.app-sidebar > div:last-child .text-amber-800 {
+  color: #854d0e;
+}
+
+.app-menu-toggle {
+  background: #2d0b7a;
+  box-shadow: 0 6px 18px rgb(45 11 122 / 0.25);
+}
+
+.app-pdv-catalog-header {
+  border-bottom: 1px solid #e9d5ff;
+  background: linear-gradient(115deg, #f3e8ff, #faf7ff);
+}
+
+.app-card {
+  border: 1px solid var(--app-line);
+  border-radius: 1rem;
+  box-shadow: 0 3px 12px rgb(36 20 61 / 0.035);
+}
+
+.app-kpi-card {
+  position: relative;
+  overflow: hidden;
+  border-color: #e7def1;
+  box-shadow: 0 6px 20px rgb(45 11 122 / 0.055);
+}
+
+.app-kpi-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--brand-violet) 0%,
+    var(--brand-pink) 58%,
+    var(--brand-orange) 82%,
+    var(--brand-yellow) 100%
+  );
+  content: '';
+}
+
+.app-shell table thead tr {
+  background: #faf8fc;
+}
+
+.app-shell tbody tr:hover {
+  background-color: #fbf9fd;
+}
+
+.app-shell :is(input, select, textarea) {
+  border-color: #dcd5e5;
+}
+
+.app-shell :is(input, select, textarea):focus {
+  border-color: var(--brand-violet);
+}
+
+.app-shell :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--brand-violet);
+  outline-offset: 2px;
+}
+
+.app-shell button[class~="bg-blue-600"] {
+  box-shadow: 0 4px 10px rgb(91 33 182 / 0.18);
+}
+
+.app-shell button[class~="bg-blue-600"]:hover:not(:disabled) {
+  box-shadow: 0 6px 14px rgb(91 33 182 / 0.24);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell *,
+  .app-shell *::before,
+  .app-shell *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .landing-flow-section {
   background-color: var(--landing-brand-deep);
 }

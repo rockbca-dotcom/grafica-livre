@@ -1,12 +1,12 @@
 # Auditoria do sistema
 
-**Data da revisão inicial:** 14/10/2026. **Atualizações do código:** 15/10/2026 e 22/10/2026.
-**Escopo desta revisão:** leitura das mudanças, `npm run lint`, `npm run build`, renderização do comprovante e teste manual local do perfil da empresa e da lista de vendas com dados fictícios.
+**Data da revisão inicial:** 14/10/2026. **Atualizações do código:** 15/10/2026, 22/10/2026 e 03/11/2026.
+**Escopo desta revisão:** leitura das alterações visuais e da documentação, `npm run lint`, `npm run build` e registro dos testes manuais funcionais realizados nas revisões anteriores.
 **Limite:** não houve acesso ao Supabase/Vercel de produção nem dados de clientes. As migrações não foram executadas contra Supabase local ou online; os testes de interface usaram armazenamento local e não simulam `member`. Não foi validada impressão em impressora física.
 
 ## Resumo para decisão
 
-1. FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05 e EMP-01 estão no código. Histórico, busca/paginação, perfil com Inscrição Estadual e fluxo do comprovante foram conferidos localmente com dados fictícios. Para o modo nuvem, a migração pendente precisa ser aplicada e a RLS/autoria ainda deve ser validada em um banco Supabase.
+1. FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05, EMP-01 e VIS-01 estão no código. Histórico, busca/paginação, perfil com Inscrição Estadual e fluxo do comprovante foram conferidos localmente com dados fictícios. VIS-01 atualiza logo, cores e tipografia sem alterar operações. Para o modo nuvem, as migrações pendentes precisam ser aplicadas e a RLS/autoria ainda deve ser validada em um banco Supabase.
 2. A restauração de backup substitui os dados atuais e não é validada nem transacional no Supabase; uma falha no meio pode deixar dados incompletos.
 3. `npm audit` sinaliza cinco dependências com vulnerabilidades classificadas como altas.
 4. Lint e build funcionaram. O lint apontou 10 avisos; o build apontou um aviso de arquivos JavaScript grandes. Não existe comando/suíte de teste automatizado configurado.
@@ -107,6 +107,7 @@ Avisos consultados pelo próprio relatório:
 | `npm run lint` (22/10, impressão e paginação) | Concluiu com código 0; permanecem os mesmos 10 avisos `react(only-export-components)`. |
 | `npm run build` (22/10, impressão e paginação) | Concluiu com código 0; permanecem os avisos de bundle acima de 500 KB. |
 | Revalidação conjunta final (22/10): lint, build e `git diff --check` | Os três comandos concluíram com código 0. O lint manteve 10 avisos conhecidos; o build gerou bundle principal de 920 KB e chunk PDF de 1,84 MB, com aviso de tamanho; `git diff --check` não apontou erros de whitespace. |
+| Revalidação do código e documentação (03/11): `npm run lint`, `npm run build` e `git diff --check` | Lint e build concluíram com código 0. Permanecem 10 avisos `react(only-export-components)` e o aviso do Vite sobre chunks acima de 500 KB. `git diff --check` não apontou erros de whitespace. A disponibilidade do arquivo do logo foi confirmada por HTTP 200 no servidor local. |
 | Teste manual local de impressão/lista (22/10) | Registrei 11 vendas fictícias, conferi 10 linhas na página 1, 1 na página 2, busca por número e busca sem acento por vendedor; a nova busca voltou à primeira página. A tela mostrou botão de impressão por venda e a confirmação após registro. Não foi testada uma impressora física nem a sessão `member`. |
 | Teste manual local de Inscrição Estadual (22/10) | Salvei um valor de teste no Perfil da Empresa, naveguei para outra tela e confirmei que o valor continuou preenchido. |
 | Verificação do modelo do comprovante (22/10) | Renderização TypeScript com dados fictícios confirmou largura de conteúdo, CNPJ, IE, cliente, vendedor, número, item, pagamento e total; IE vazia não gera linha no recibo. |

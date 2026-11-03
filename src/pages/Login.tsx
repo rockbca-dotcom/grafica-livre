@@ -35,13 +35,17 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-900 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
-        <h1 className="mb-1 text-center text-2xl font-bold text-slate-800">Gráfica Livre</h1>
-        <p className="mb-6 text-center text-sm text-slate-500">
+    <div className="login-page flex min-h-screen items-center justify-center p-4">
+      <div className="login-card w-full max-w-sm rounded-2xl bg-white p-8">
+        <img
+          src="/brand/graficaup-logo-horizontal-dark.png"
+          alt="GraficaUp Studio"
+          className="mx-auto mb-5 block h-auto w-full max-w-[220px]"
+        />
+        <h1 className="mb-6 text-center text-xl font-bold text-violet-950">
           {mode === 'login' && 'Entre na sua conta'}
           {mode === 'reset' && 'Recuperar senha'}
-        </p>
+        </h1>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Field label="E-mail">
@@ -78,12 +82,12 @@ export default function Login() {
 
         <div className="mt-5 flex flex-col gap-1 text-center text-sm">
           {mode === 'login' && (
-            <button className="text-blue-600 hover:underline" onClick={() => setMode('reset')}>
+            <button className="text-violet-700 hover:text-violet-900 hover:underline" onClick={() => setMode('reset')}>
               Esqueci minha senha
             </button>
           )}
           {mode !== 'login' && (
-            <button className="text-blue-600 hover:underline" onClick={() => setMode('login')}>
+            <button className="text-violet-700 hover:text-violet-900 hover:underline" onClick={() => setMode('login')}>
               ← Voltar para o login
             </button>
           )}

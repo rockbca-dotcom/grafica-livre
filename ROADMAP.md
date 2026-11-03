@@ -1,7 +1,7 @@
 # ROADMAP — pedidos do cliente
 
-**Estado:** FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05 e EMP-01 implementados no código. Lint, build e conferência manual local concluídos; teste de autoria/RLS no Supabase, aplicação das migrações pendentes e publicação ainda são necessários para ativar a versão online.
-**Fonte:** conversa exportada do WhatsApp em 14/10/2026 e solicitações do cliente registradas em 22/10/2026.
+**Estado:** FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05, EMP-01 e VIS-01 implementados no código. Lint e build locais concluídos; teste de autoria/RLS no Supabase, aplicação das migrações pendentes e publicação ainda são necessários para ativar os recursos online.
+**Fonte:** conversa exportada do WhatsApp em 14/10/2026, solicitações do cliente de 22/10/2026 e pedido de identidade visual de 03/11/2026.
 **Detalhamento e decisões de negócio:** [PRD.md](PRD.md).
 
 ## Ordem de execução
@@ -89,6 +89,17 @@
 - [ ] Aplicar a migração `20261022140000_comprovante_venda_rapida.sql`, validar autoria/RLS com `owner` e `member` no Supabase online e publicar o frontend e a Edge Function `assistente-ia`.
 
 **Aceite:** critérios de `PDV-03`, `PDV-04`, `PDV-05` e `EMP-01` em [PRD.md](PRD.md).
+
+### Etapa 7 — Atualizar a identidade visual interna — implementação local concluída
+
+- [x] Aplicar a marca GraficaUp Studio ao login e à navegação interna com o logo oficial disponível no repositório.
+- [x] Usar superfícies claras lilás/violeta na tela de login, barra lateral e cabeçalho do catálogo do PDV.
+- [x] Padronizar títulos em Montserrat e textos em Inter, mantendo ações e estados legíveis.
+- [x] Preservar rotas, permissões, dados e operações existentes.
+- [x] Atualizar README, PRD e arquitetura com a identidade e as telas em que ela aparece.
+- [x] Executar lint e build locais.
+
+**Aceite:** critérios de `VIS-01` em [PRD.md](PRD.md).
 
 ## Dependências resumidas
 

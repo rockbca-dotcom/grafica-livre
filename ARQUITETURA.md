@@ -1,6 +1,6 @@
 # Arquitetura e mapa do sistema
 
-**Revisão:** 22/10/2026
+**Revisão:** 03/11/2026
 **Base:** código presente neste repositório. As migrações e a publicação da atualização ainda precisam ser feitas no ambiente online; veja [ROADMAP.md](ROADMAP.md).
 
 ## 1. Resumo em linguagem simples
@@ -37,6 +37,10 @@ flowchart LR
 | Funções de servidor | `supabase/functions/` | Gerenciamento de equipe, envio de e-mail e assistente de IA. |
 
 O ponto de entrada visual é `src/main.tsx`; `src/App.tsx` organiza os provedores e as rotas. O app carrega as coleções de dados para o estado do navegador quando inicia. No Supabase, as consultas passam pelas políticas RLS usando a sessão da pessoa.
+
+### Identidade visual
+
+A marca exibida na interface é GraficaUp Studio; o repositório mantém o nome interno Gráfica Livre. O logo horizontal em `public/brand/graficaup-logo-horizontal-dark.png` aparece na landing, no login e na navegação do painel. `src/index.css` mantém estilos separados para landing, login e painel interno: Montserrat nos títulos, Inter nos textos, lilás claro nas superfícies e violeta em ações e estados selecionados. No PDV, o cabeçalho do catálogo segue a mesma paleta clara. Esses estilos não alteram rotas nem regras de operação.
 
 ## 3. Módulos que existem
 

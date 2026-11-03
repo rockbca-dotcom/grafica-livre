@@ -1,12 +1,12 @@
 # PRD — Gráfica Livre
 
-**Status:** FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05 e EMP-01 implementados no código. Lint, build e teste manual local concluídos; aplicar a nova migração e validar autoria/RLS no Supabase online ainda está pendente.
-**Data da análise:** 14/10/2026; decisões confirmadas em 15/10/2026 e 22/10/2026.
-**Fonte principal:** exportação da conversa do WhatsApp “Sistema Gráfica”, incluindo texto, imagens e um vídeo com áudio; solicitações adicionais sobre histórico, vendas rápidas e comprovante térmico recebidas em 22/10/2026.
+**Status:** FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05, EMP-01 e VIS-01 implementados no código. A validação local de lint/build foi executada. Aplicar as migrações e validar autoria/RLS no Supabase online ainda está pendente.
+**Data da análise:** 14/10/2026; decisões complementares em 15/10/2026, 22/10/2026 e 03/11/2026.
+**Fonte principal:** exportação da conversa do WhatsApp “Sistema Gráfica”, incluindo texto, imagens e um vídeo com áudio; solicitações adicionais sobre histórico, vendas rápidas e comprovante térmico em 22/10/2026 e identidade visual em 03/11/2026.
 
 ## 1. Em uma frase
 
-O Gráfica Livre ajuda uma gráfica a registrar clientes e produtos, vender, orçar, faturar, acompanhar a produção e consultar pedidos e vendas por cliente; o código restringe a gestão financeira por papel, mantém favoritos do PDV compartilhados e libera a lista de vendas rápidas para colaboradores, mas a versão online depende das migrações e publicação descritas em [DEPLOY.md](DEPLOY.md).
+O GraficaUp Studio ajuda uma gráfica a registrar clientes e produtos, vender, orçar, faturar, acompanhar a produção e consultar pedidos e vendas por cliente; o código restringe a gestão financeira por papel, mantém favoritos do PDV compartilhados e libera a lista de vendas rápidas para colaboradores, mas a versão online depende das migrações e publicação descritas em [DEPLOY.md](DEPLOY.md).
 
 ## 2. Problemas do cliente
 
@@ -57,6 +57,7 @@ O inventário de módulos, entidades e integrações está em [ARQUITETURA.md](A
 | Captura e pedido para liberar a lista de vendas rápidas | A equipe deve consultar a lista de últimas vendas do PDV, inclusive o total de cada registro. | Alta: pedido explícito do usuário em 22/10/2026. |
 | Mensagens e imagens de referência da impressão térmica e da lista | Imprimir após salvar uma venda, reimprimir pela lista, usar papel de 88 mm, pesquisar e exibir 10 vendas por página. | Alta: decisões expressas pelo usuário em 22/10/2026; as imagens orientam o formato visual. |
 | Decisões sobre cadastro e autoria | Adicionar Inscrição Estadual ao perfil da gráfica e identificar quem registrou cada nova venda. | Alta: decisões expressas pelo usuário em 22/10/2026. |
+| Solicitações de identidade visual | Aplicar a marca GraficaUp Studio e a paleta violeta/lilás no painel interno, no login e nos destaques do PDV, sem alterar os fluxos. | Alta: pedidos e comentários visuais do usuário em 03/11/2026. |
 
 Os trechos do áudio que mencionam preço/descrição e a forma exata de ocultar os itens são ambíguos. Não os transformamos em regras adicionais. A pesquisa já existe hoje; o pedido é reduzir a dificuldade causada pela lista extensa.
 
@@ -212,6 +213,24 @@ Não há um papel `admin` separado no código atual. Esta atualização deve usa
 - O valor persiste nos modos local e Supabase e é preservado em backups antigos/novos.
 - Quando não preenchido, o comprovante não mostra uma linha de IE vazia.
 
+### VIS-01 — Aplicar a identidade visual GraficaUp Studio
+
+**Prioridade:** P1
+
+**Origem:** pedidos e comentários visuais do usuário em 03/11/2026, com base no logo e no design enviados.
+
+**Regra:** apresentar a marca GraficaUp Studio e usar a paleta violeta/lilás nas telas internas, mantendo os fluxos e as regras de negócio existentes.
+
+**Critérios de aceite:**
+
+- A landing, o login e a navegação interna exibem o logo GraficaUp Studio.
+- A tela de login e a barra lateral usam superfícies claras da paleta; itens ativos e ações principais usam violeta com contraste legível.
+- O cabeçalho de seleção de produtos do PDV usa lilás claro, texto escuro e campo de busca branco.
+- Montserrat é usada nos títulos e Inter nos demais textos do painel.
+- A alteração não muda rotas, permissões, cálculos, armazenamento nem ações do sistema.
+
+**Implementação:** estilos do login, da barra lateral, dos cartões e dos destaques internos em `src/index.css`; logo reutilizado de `public/brand/graficaup-logo-horizontal-dark.png`. Implementado localmente.
+
 ## 7. Fora do escopo desta atualização
 
 - Bloquear valores, status e operações de pagamento dentro da tela Faturas.
@@ -234,6 +253,7 @@ Os itens acima não fazem parte do escopo confirmado pelo cliente.
 7. **Lista de vendas — 22/10/2026:** acrescentar busca por número, data, cliente/balcão, vendedor e pagamento; mostrar 10 vendas por página.
 8. **Inscrição Estadual — 22/10/2026:** acrescentar campo opcional ao Perfil da Empresa e mostrá-lo no comprovante quando estiver preenchido.
 9. **Vendedor — 22/10/2026:** salvar a identidade e o nome da pessoa autenticada nas vendas novas do modo nuvem. Vendas antigas e o modo local sem login não recebem atribuição presumida.
+10. **Identidade visual — 03/11/2026:** usar o logo e a paleta violeta/lilás da GraficaUp Studio no login e no painel interno. A atualização é visual e preserva as funcionalidades.
 
 ## 9. Requisitos de segurança e dados
 
@@ -258,6 +278,6 @@ Os itens acima não fazem parte do escopo confirmado pelo cliente.
 
 ## 11. Critério de conclusão desta atualização
 
-A atualização estará pronta quando FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05 e EMP-01 passarem pelos critérios acima, os dados existentes forem preservados e README, guia, fluxo e roteiro refletirem o comportamento do código. A alteração de código, sozinha, não significa que a migração e o frontend já foram publicados.
+A atualização estará pronta quando FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05, EMP-01 e VIS-01 passarem pelos critérios acima, os dados existentes forem preservados e a documentação refletir o comportamento do código. A alteração de código, sozinha, não significa que as migrações e o frontend já foram publicados.
 
 Os achados técnicos da auditoria são acompanhados separadamente em [AUDITORIA.md](AUDITORIA.md); eles não são pedidos do cliente nem mudam o escopo do [ROADMAP.md](ROADMAP.md).

@@ -1,7 +1,7 @@
-# Fluxo do Gráfica Livre
+# Fluxos do GraficaUp Studio
 
-**Revisão:** 22/10/2026
-**Estado:** FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05 e EMP-01 implementados no código. Lint, build e conferência manual do PDV concluídos localmente; o modo local não simula `member` nem autoria autenticada. Aplicar migração, validar RLS/autoria online e publicar ainda estão pendentes.
+**Revisão:** 03/11/2026
+**Estado:** FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05, EMP-01 e VIS-01 implementados no código. Lint, build e conferência manual do PDV concluídos localmente; o modo local não simula `member` nem autoria autenticada. Aplicar migrações, validar RLS/autoria online e publicar ainda estão pendentes. VIS-01 atualiza a apresentação visual sem mudar estes fluxos.
 **Regras detalhadas:** [PRD.md](PRD.md). Este desenho explica o caminho, não substitui os critérios de aceite.
 
 ## 1. Abrir o sistema e decidir o acesso

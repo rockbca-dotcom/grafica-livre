@@ -455,7 +455,7 @@ export function SearchBox({
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-xl bg-white p-5 shadow-sm ${className}`}>{children}</div>
+    <div className={`app-card rounded-xl bg-white p-5 shadow-sm ${className}`}>{children}</div>
   )
 }
 
@@ -484,7 +484,7 @@ export function KpiCard({
   to?: string
 }) {
   const body = (
-    <Card className="h-full transition-shadow hover:shadow-md">
+    <Card className="app-kpi-card h-full transition-shadow hover:shadow-md">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
       <p className={`mt-1 text-2xl font-bold ${KPI_TONES[tone]}`}>{value}</p>
       {hint && <p className="mt-0.5 text-xs text-slate-400">{hint}</p>}

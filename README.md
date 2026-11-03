@@ -1,6 +1,6 @@
-# Gráfica Livre — gestão de gráfica
+# GraficaUp Studio — gestão de gráficas
 
-Sistema de gestão comercial e operacional para gráficas rápidas e empresas de comunicação visual. Reúne em um só lugar o cadastro de produtos e clientes, a criação de orçamentos, as vendas de balcão, o acompanhamento da produção e o controle financeiro. O código deste repositório se chama Gráfica Livre; algumas telas e o assistente ainda exibem a marca GraficaUp Studio.
+Sistema de gestão comercial e operacional para gráficas rápidas e empresas de comunicação visual. Reúne em um só lugar o cadastro de produtos e clientes, a criação de orçamentos, as vendas de balcão, o acompanhamento da produção e o controle financeiro. O repositório mantém o nome interno Gráfica Livre; a interface usa a marca GraficaUp Studio.
 
 ## Para quem é
 
@@ -17,6 +17,7 @@ Para equipes que precisam sair de anotações e planilhas dispersas e acompanhar
 - **Financeiro e relatórios:** gestão financeira e visão de resultados para o proprietário/administrador.
 - **Equipe:** contas de proprietário e colaboradores que trabalham nos mesmos dados da gráfica.
 - **Assistente opcional:** consultas e propostas de cadastro/lançamento no modo Supabase, com envio de mensagens e resultados consultados ao provedor de IA configurado.
+- **Identidade visual:** logo GraficaUp Studio, tipografia Montserrat e Inter, e paleta violeta/lilás na landing, no login e no painel interno.
 
 Para entender o que cada tela faz, os dados que guarda e as limitações atuais, consulte [ARQUITETURA.md](ARQUITETURA.md). O resultado da revisão de riscos está em [AUDITORIA.md](AUDITORIA.md).
 
@@ -34,8 +35,9 @@ A conversa de 14/10/2026 trouxe dois pedidos. Em 22/10/2026 também foram solici
 4. Mostrar a lista de vendas rápidas para colaboradores, com pesquisa, paginação de 10, vendedor, total, cliente, pagamento, data e número.
 5. Imprimir comprovante de 88 mm após a venda e permitir reimpressão pela lista.
 6. Cadastrar a Inscrição Estadual da gráfica e identificar a pessoa autenticada que registrou cada venda online.
+7. Aplicar a identidade GraficaUp Studio ao login e ao painel interno, preservando os fluxos existentes.
 
-O escopo foi confirmado em 15/10/2026 e 22/10/2026: gestão e indicadores financeiros restritos ao proprietário, faturas e pagamentos operacionais liberados para a equipe, favoritos compartilhados, histórico por cliente e consulta/impressão de vendas rápidas. O sistema identifica o vendedor quando há login Supabase; modo local e vendas antigas sem esse dado ficam como “Não identificado”. Para ativar as mudanças no ambiente online, aplique as migrações pendentes e publique o frontend e a função `assistente-ia`. O estado detalhado está em [ROADMAP](ROADMAP.md), e as regras completas estão no [PRD](PRD.md).
+O escopo funcional foi confirmado em 15/10/2026 e 22/10/2026; a identidade visual foi atualizada em 03/11/2026. As decisões incluem gestão financeira restrita ao proprietário, faturas e pagamentos operacionais liberados para a equipe, favoritos compartilhados, histórico por cliente e consulta/impressão de vendas rápidas. O sistema identifica o vendedor quando há login Supabase; modo local e vendas antigas sem esse dado ficam como “Não identificado”. Para ativar as mudanças funcionais no ambiente online, aplique as migrações pendentes e publique o frontend e a função `assistente-ia`. O estado detalhado está em [ROADMAP](ROADMAP.md), e as regras completas estão no [PRD](PRD.md).
 
 ## Documentação do projeto
 

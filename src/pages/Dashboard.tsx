@@ -188,8 +188,8 @@ export default function Dashboard() {
                   }
                 />
                 <Legend />
-                <Bar dataKey="Recebido" fill="#10b981" radius={[4, 4, 0, 0]} isAnimationActive={anim} />
-                <Bar dataKey="Despesas" fill="#f43f5e" radius={[4, 4, 0, 0]} isAnimationActive={anim} />
+                <Bar dataKey="Recebido" fill="#7c3aed" radius={[4, 4, 0, 0]} isAnimationActive={anim} />
+                <Bar dataKey="Despesas" fill="#f97316" radius={[4, 4, 0, 0]} isAnimationActive={anim} />
               </BarChart>
             </ResponsiveContainer>
           </div>

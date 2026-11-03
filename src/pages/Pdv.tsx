@@ -248,20 +248,20 @@ export default function Pdv() {
 
       <div className="grid items-start gap-5 xl:grid-cols-[1.15fr_0.85fr]">
         <Card className="overflow-hidden border border-slate-200 p-0">
-          <div className="bg-slate-900 px-5 py-5 text-white">
+          <div className="app-pdv-catalog-header px-5 py-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-700">
                   Balcão aberto
                 </p>
-                <h2 className="mt-1 text-xl font-bold">Escolha os produtos da venda</h2>
+                <h2 className="mt-1 text-xl font-bold text-violet-950">Escolha os produtos da venda</h2>
               </div>
-              <span className="rounded-full border border-white/20 px-3 py-1 text-xs text-slate-300">
+              <span className="rounded-full border border-violet-200 bg-white/70 px-3 py-1 text-xs text-violet-800">
                 {db.itens.length} no catálogo
               </span>
             </div>
             <input
-              className="mt-5 w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2.5 text-sm text-white placeholder:text-slate-400 focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/30"
+              className="mt-5 w-full rounded-lg border border-violet-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
               placeholder="Buscar produto ou serviço..."
               value={busca}
               onChange={(event) => setBusca(event.target.value)}

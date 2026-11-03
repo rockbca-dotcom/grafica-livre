@@ -23,12 +23,12 @@ const NAV = [
 export default function Layout() {
   const [open, setOpen] = useState(false)
   const { cloudMode, session, signOut, role } = useAuth()
-  const { db, loading } = useData()
+  const { loading } = useData()
 
   return (
-    <div className="flex min-h-screen">
+    <div className="app-shell flex min-h-screen">
       <button
-        className="fixed left-3 top-3 z-40 rounded-lg bg-slate-800 px-3 py-2 text-white shadow-lg lg:hidden"
+        className="app-menu-toggle fixed left-3 top-3 z-40 rounded-lg bg-slate-800 px-3 py-2 text-white shadow-lg lg:hidden"
         onClick={() => setOpen(!open)}
         aria-label="Menu"
       >
@@ -36,15 +36,19 @@ export default function Layout() {
       </button>
 
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-slate-900 text-slate-200 transition-transform lg:translate-x-0 ${
+        className={`app-sidebar fixed inset-y-0 left-0 z-30 w-64 transform bg-slate-50 text-slate-800 transition-transform lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="border-b border-slate-800 px-5 py-5">
-          <h1 className="text-lg font-bold text-white">
-            {db.empresa.nome || 'Gráfica Livre'}
-          </h1>
-          <p className="mt-0.5 text-xs text-slate-400">Gestão para gráficas</p>
+          <div className="app-sidebar-brand rounded-xl border border-violet-100 bg-white px-2 py-1.5 shadow-sm">
+            <img
+              src="/brand/graficaup-logo-horizontal-dark.png"
+              alt="GraficaUp Studio"
+              className="block w-full"
+            />
+          </div>
+          <p className="mt-2 text-xs text-slate-500">Gestão para gráficas</p>
         </div>
         <nav className="mt-2 flex max-h-[calc(100vh-11rem)] flex-col gap-0.5 overflow-y-auto px-3 pb-4">
           {NAV.filter((item) => {
@@ -58,10 +62,8 @@ export default function Layout() {
               end={item.to === '/'}
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                  isActive
-                    ? 'bg-blue-600 font-medium text-white'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                `app-nav-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                  isActive ? 'app-nav-link-active font-medium text-white' : 'app-nav-link-idle text-slate-300'
                 }`
               }
             >
@@ -73,18 +75,18 @@ export default function Layout() {
         <div className="absolute inset-x-0 bottom-0 border-t border-slate-800 p-4 text-xs">
           {cloudMode ? (
             <div className="flex items-center justify-between gap-2">
-              <span className="truncate text-slate-400" title={session?.user.email ?? ''}>
+              <span className="truncate text-slate-500" title={session?.user.email ?? ''}>
                 {session?.user.email}
               </span>
               <button
                 onClick={signOut}
-                className="shrink-0 rounded px-2 py-1 text-slate-300 hover:bg-slate-800"
+                className="shrink-0 rounded px-2 py-1 text-slate-700 hover:bg-slate-200"
               >
                 Sair
               </button>
             </div>
           ) : (
-            <span className="text-amber-400">
+            <span className="text-amber-800">
               ⚠ Modo local — dados apenas neste navegador. Configure o Supabase para uso
               profissional.
             </span>
