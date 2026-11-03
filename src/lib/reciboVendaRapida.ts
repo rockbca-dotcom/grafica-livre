@@ -75,7 +75,7 @@ export function montarHtmlComprovanteVendaRapida(
     @page { size: auto; margin: 0; }
     * { box-sizing: border-box; }
     html, body { width: 88mm; min-height: 100%; margin: 0; background: #fff; }
-    body { padding: 2mm; color: #000; font: 11px/1.35 "Courier New", monospace; }
+    body { padding: 2mm; color: #000; font: 600 12px/1.35 Arial, Helvetica, sans-serif; }
     .ticket { width: 84mm; margin: 0 auto; }
     .company { font-weight: 700; text-transform: uppercase; }
     .center { text-align: center; }
