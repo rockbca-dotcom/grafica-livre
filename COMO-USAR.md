@@ -53,7 +53,7 @@ Faça nesta ordem:
 | Histórico de pedidos | Em Clientes, clicar em **Histórico**. A lista mostra data, tipo, número, itens, total e status, do mais recente ao mais antigo. Para a venda direta aparecer, selecione o cliente no PDV antes de registrar; uma venda de balcão sem cliente não pode ser associada depois automaticamente. |
 | Relatórios | Proprietário consulta vendas, fluxo de caixa e resultado por cliente; exporta CSV. |
 | Perfil da Empresa | Editar os dados usados nos documentos e na cobrança PIX, incluindo Inscrição Estadual opcional para o comprovante térmico. |
-| Equipe | No modo nuvem, proprietário cria e administra os acessos dos colaboradores. |
+| Equipe | No modo nuvem, proprietário cria, edita o cadastro e administra os acessos dos colaboradores. |
 | Configurações | Exportar/importar JSON e verificar se está no modo local ou nuvem. |
 
 ## Login, proprietário e equipe
@@ -63,7 +63,7 @@ O modo nuvem precisa do Supabase. Há dois papéis no código:
 - `owner`: dono/administrador da gráfica.
 - `member`: colaborador.
 
-O proprietário cria contas pela tela Equipe. A senha inicial é definida no cadastro e deve ser entregue por canal seguro. A criação exige nome, e-mail, data de nascimento, função e senha. O acesso fica ativo imediatamente. O proprietário também pode revogar ou reativar uma conta.
+O proprietário cria contas pela tela Equipe. A senha inicial é definida no cadastro e deve ser entregue por canal seguro. A criação exige nome, e-mail, data de nascimento, função e senha. O acesso fica ativo imediatamente. O proprietário pode usar **Editar** para corrigir nome, e-mail, nascimento e função; se mudar o e-mail, o colaborador passa a usar o novo endereço para entrar. A senha não muda nessa edição. O proprietário também pode revogar ou reativar uma conta.
 
 No modo Supabase, apenas `owner` abre Contas a Receber, Contas a Pagar e Relatórios. A tabela de despesas também é restrita no banco. O colaborador mantém acesso a Faturas, valores e pagamentos para executar o atendimento; pode consultar as últimas vendas rápidas no PDV, inclusive as de balcão sem cliente, e o histórico por cliente em **Clientes → Histórico**. Essa consulta não permite alterar ou excluir vendas. No modo local, não há login nem controle de papel; quem usa o mesmo navegador vê os mesmos dados.
 

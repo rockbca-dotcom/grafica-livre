@@ -103,12 +103,11 @@ Deno.serve(async (req: Request) => {
       return response({ error: 'Somente administradores da gráfica podem gerenciar colaboradores.' }, 403, origin)
     }
 
-    if (action === 'create') {
-      const fullName = payload?.fullName?.trim().replace(/\s+/g, ' ') ?? ''
-      const email = payload?.email?.trim().toLowerCase() ?? ''
-      const birthDate = payload?.birthDate?.trim() ?? ''
-      const jobTitle = payload?.jobTitle?.trim() ?? ''
-      const password = payload?.password ?? ''
+    if (action === 'create' || action === 'update') {
+      const fullName = typeof payload?.fullName === 'string' ? payload.fullName.trim().replace(/\s+/g, ' ') : ''
+      const email = typeof payload?.email === 'string' ? payload.email.trim().toLowerCase() : ''
+      const birthDate = typeof payload?.birthDate === 'string' ? payload.birthDate.trim() : ''
+      const jobTitle = typeof payload?.jobTitle === 'string' ? payload.jobTitle.trim() : ''
 
       if (fullName.length < 2 || fullName.length > 120) {
         return response({ error: 'Informe o nome completo (até 120 caracteres).' }, 400, origin)
@@ -122,11 +121,90 @@ Deno.serve(async (req: Request) => {
       if (!jobTitle || jobTitle.length > 80) {
         return response({ error: 'Informe a função (até 80 caracteres).' }, 400, origin)
       }
-      if (password.length < 8 || password.length > 128) {
-        return response({ error: 'A senha deve ter entre 8 e 128 caracteres.' }, 400, origin)
-      }
       if (email === caller.email?.toLowerCase()) {
         return response({ error: 'Este e-mail já é o proprietário da gráfica.' }, 409, origin)
+      }
+
+      if (action === 'update') {
+        const userId = payload?.userId
+        if (typeof userId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId) || userId === caller.id) {
+          return response({ error: 'Selecione um colaborador válido.' }, 400, origin)
+        }
+
+        const { data: target, error: targetError } = await adminClient
+          .from('workspace_members')
+          .select('email, role')
+          .eq('owner_id', membership.owner_id)
+          .eq('user_id', userId)
+          .maybeSingle()
+        if (targetError) throw targetError
+        if (!target || target.role !== 'member') {
+          return response({ error: 'Colaborador não encontrado.' }, 404, origin)
+        }
+
+        const emailChanged = target.email !== email
+        if (emailChanged) {
+          const { data: existing, error: existingError } = await adminClient
+            .from('workspace_members')
+            .select('user_id')
+            .eq('email', email)
+            .neq('user_id', userId)
+            .limit(1)
+            .maybeSingle()
+          if (existingError) throw existingError
+          if (existing) return response({ error: 'Este e-mail já possui uma conta no sistema.' }, 409, origin)
+        }
+
+        let previousEmail = ''
+        if (emailChanged) {
+          const { data: authUser, error: getUserError } = await adminClient.auth.admin.getUserById(userId)
+          if (getUserError || !authUser.user?.email) {
+            console.error('Falha ao consultar o e-mail atual do colaborador:', getUserError?.message)
+            return response({ error: 'Não foi possível atualizar o e-mail. Tente novamente.' }, 500, origin)
+          }
+          previousEmail = authUser.user.email
+          const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(userId, {
+            email,
+            email_confirm: true,
+          })
+          if (authUpdateError) {
+            const message = authUpdateError.message.toLowerCase()
+            if (message.includes('already') || message.includes('registered') || message.includes('exists')) {
+              return response({ error: 'Este e-mail já possui uma conta no sistema.' }, 409, origin)
+            }
+            console.error('Falha ao atualizar o e-mail do colaborador:', authUpdateError.message)
+            return response({ error: 'Não foi possível atualizar o e-mail. Tente novamente.' }, 500, origin)
+          }
+        }
+
+        const { data: updated, error: updateError } = await adminClient
+          .from('workspace_members')
+          .update({ email, full_name: fullName, birth_date: birthDate, job_title: jobTitle })
+          .eq('owner_id', membership.owner_id)
+          .eq('user_id', userId)
+          .eq('role', 'member')
+          .select('user_id')
+          .maybeSingle()
+        if (updateError || !updated) {
+          if (emailChanged) {
+            const { error: rollbackError } = await adminClient.auth.admin.updateUserById(userId, {
+              email: previousEmail,
+              email_confirm: true,
+            })
+            if (rollbackError) {
+              console.error('Falha ao reverter o e-mail do colaborador:', updateError?.message, rollbackError.message)
+              return response({ error: 'A alteração do e-mail ficou incompleta. Contate o suporte.' }, 500, origin)
+            }
+          }
+          console.error('Falha ao atualizar o cadastro do colaborador:', updateError?.message ?? 'registro não encontrado')
+          return response({ error: updateError?.code === '23505' ? 'Este e-mail já faz parte da equipe.' : 'Não foi possível salvar o colaborador. Tente novamente.' }, updateError?.code === '23505' ? 409 : 500, origin)
+        }
+        return response({ ok: true, message: `${fullName} foi atualizado.` }, 200, origin)
+      }
+
+      const password = typeof payload?.password === 'string' ? payload.password : ''
+      if (password.length < 8 || password.length > 128) {
+        return response({ error: 'A senha deve ter entre 8 e 128 caracteres.' }, 400, origin)
       }
 
       const { data: existing, error: existingError } = await adminClient

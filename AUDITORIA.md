@@ -1,8 +1,8 @@
 # Auditoria do sistema
 
-**Data da revisão inicial:** 14/10/2026. **Atualizações do código:** 15/10/2026, 22/10/2026 e 03/11/2026.
-**Escopo desta revisão:** leitura das alterações visuais e da documentação, `npm run lint`, `npm run build` e registro dos testes manuais funcionais realizados nas revisões anteriores.
-**Limite:** não houve acesso ao Supabase/Vercel de produção nem dados de clientes. As migrações não foram executadas contra Supabase local ou online; os testes de interface usaram armazenamento local e não simulam `member`. Não foi validada impressão em impressora física.
+**Data da revisão inicial:** 14/10/2026. **Atualizações do código:** 15/10/2026, 22/10/2026, 03/11/2026 e 05/11/2026.
+**Escopo até 03/11/2026:** leitura das alterações visuais e da documentação, `npm run lint`, `npm run build` e registro dos testes manuais funcionais realizados nas revisões anteriores.
+**Limite das revisões anteriores:** não houve acesso ao Supabase/Vercel de produção nem dados de clientes. As migrações não foram executadas contra Supabase local ou online; os testes de interface usaram armazenamento local e não simulam `member`. Não foi validada impressão em impressora física.
 
 ## Resumo para decisão
 
@@ -12,6 +12,16 @@
 4. Lint e build funcionaram. O lint apontou 10 avisos; o build apontou um aviso de arquivos JavaScript grandes. Não existe comando/suíte de teste automatizado configurado.
 
 ## Achados priorizados
+
+### Revisão de 05/11/2026 — edição de colaboradores e proteção de dados
+
+- No projeto Supabase online, a organização usa o plano `free`. A consulta somente de leitura encontrou 4 colaboradores, 2 proprietários, nenhuma conta de equipe sem usuário Auth e nenhum e-mail divergente entre `workspace_members` e Auth. Os campos necessários existem e não há gatilhos personalizados de atualização em `auth.users` ou `workspace_members`.
+- Contagens de referência em 05/11/2026, sem leitura de dados pessoais: 20 clientes, 112 itens, 25 orçamentos, 18 faturas, 9 pagamentos, 183 vendas rápidas, 2 contas a pagar, 21 cards de produção, 1 empresa e 6 integrantes da equipe. Mudanças operacionais normais podem alterar essas contagens antes de qualquer publicação.
+- A nova ação de edição grava apenas `email`, `full_name`, `birth_date` e `job_title` em `workspace_members` e, se o e-mail mudar, atualiza o e-mail da mesma conta no Supabase Auth. Não há escrita ou exclusão de clientes, pedidos, vendas, faturas ou pagamentos nesse fluxo. O identificador da conta e do espaço não muda.
+- A atualização de e-mail envolve duas chamadas de serviço e não é transacional. Se a segunda falhar, a função tenta restaurar o e-mail anterior; falha de rede ou da reversão ainda pode deixar os endereços divergentes e exigir correção manual. Os registros de negócio continuam vinculados aos mesmos identificadores.
+- O plano `free` não oferece backup diário automático conforme a [documentação do Supabase](https://supabase.com/docs/guides/platform/backups). A integração disponível não lista backups e a página de backups exigiu login no navegador; portanto, nenhum ponto de restauração foi confirmado. A exportação JSON do app é manual e não inclui contas e senhas do Supabase Auth.
+- Antes de publicar, obter um backup completo de esquema e dados com o [procedimento oficial do Supabase CLI](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore), guardá-lo fora do projeto e conferir a possibilidade de restauração. O JSON exportado pelo app não substitui essa cópia.
+- O texto de Configurações que prometia “backup automático” e a contagem incompleta dos registros exportados foram corrigidos no código local. A importação de backup continua com o risco descrito em AUD-03. A edição da equipe ainda não foi publicada nem testada com contas reais.
 
 ### AUD-01 — Restrições por papel e histórico do cliente precisam ser aplicados no ambiente online
 
@@ -46,12 +56,16 @@ Avisos consultados pelo próprio relatório:
 
 **Próximo passo recomendado:** validar versão e estrutura do arquivo, mostrar uma prévia e contagens corretas, criar backup de segurança antes da troca e executar a substituição de modo atômico no servidor. Até lá, exportar e conferir um backup externo antes de importar.
 
+**Estado em 05/11/2026:** a interface passou a alertar sobre o risco de importação parcial no modo nuvem no código local. O fluxo de importação continua sem transação e não foi corrigido nesta mudança.
+
 ### AUD-04 — Backup automático é afirmado na tela, mas não é implementado pelo app
 
 **Prioridade:** P2 — corrigir a comunicação para evitar falsa expectativa de recuperação.
 **Evidência:** `src/pages/Configuracoes.tsx` diz que no Supabase há “backup automático”. No código do app, a exportação é manual; não há rotina que agenda ou verifica backups. O provedor pode oferecer mecanismos próprios conforme projeto/plano, mas o app não consulta nem comprova isso.
 
 **Próximo passo recomendado:** a interface e o guia devem dizer claramente que existe exportação manual e que o responsável precisa configurar/verificar a política de backup do provedor. Manter exportações externas periódicas.
+
+**Estado em 05/11/2026:** o texto da interface foi corrigido no código local; publicação pendente. O guia já descrevia a exportação manual.
 
 ### AUD-05 — Dados e perguntas do assistente são enviados à NVIDIA
 
@@ -87,6 +101,8 @@ Avisos consultados pelo próprio relatório:
 **Evidência:** `totalRegistros` em `src/pages/Configuracoes.tsx` soma clientes, itens, orçamentos, faturas e contas a pagar, mas não soma pagamentos, vendas rápidas e cards de produção. O JSON exportado inclui essas coleções, então o número exibido é menor do que o conteúdo exportado.
 
 **Próximo passo recomendado:** contar todas as coleções exportadas ou retirar o número.
+
+**Estado em 05/11/2026:** a contagem foi retirada da interface no código local; publicação pendente.
 
 ### AUD-10 — Impressão depende do diálogo e do driver da impressora
 

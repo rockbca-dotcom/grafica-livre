@@ -101,6 +101,15 @@
 
 **Aceite:** critérios de `VIS-01` em [PRD.md](PRD.md).
 
+### Etapa 8 — Editar colaboradores cadastrados
+
+- [x] Permitir ao proprietário alterar nome, e-mail, data de nascimento e função na tela Equipe.
+- [x] Validar autorização e dados na função `gerenciar-colaboradores`, sincronizando o novo e-mail com o Supabase Auth.
+- [ ] Validar a edição com uma conta de proprietário e outra de colaborador no Supabase online.
+- [ ] Publicar a tela e a Edge Function atualizadas.
+
+**Aceite:** critérios de `EQUIPE-01` em [PRD.md](PRD.md).
+
 ## Dependências resumidas
 
 ```text
@@ -115,4 +124,4 @@ Confirmações do cliente
 
 ## O que não entra neste roteiro
 
-As imagens de orçamento, cliente e equipe não descrevem uma mudança específica. Não abrir tarefas para refazer essas telas sem uma solicitação objetiva. Novos pedidos devem ser registrados no PRD com fonte, regra e critério de aceite.
+As imagens de orçamento e cliente não descrevem uma mudança específica. Não abrir tarefas para refazer essas telas sem uma solicitação objetiva. Novos pedidos devem ser registrados no PRD com fonte, regra e critério de aceite.

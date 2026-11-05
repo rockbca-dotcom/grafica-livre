@@ -31,6 +31,7 @@ export default function Equipe() {
   const [busy, setBusy] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [pendingRemoval, setPendingRemoval] = useState<WorkspaceMember | null>(null)
+  const [editingMember, setEditingMember] = useState<WorkspaceMember | null>(null)
 
   const myMembership = members.find((member) => member.user_id === session?.user.id)
   const isOwner = myMembership?.role === 'owner'
@@ -71,32 +72,48 @@ export default function Equipe() {
     return data as { message?: string }
   }
 
-  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
+  const clearForm = () => {
+    setEditingMember(null)
+    setFullName('')
+    setEmail('')
+    setBirthDate('')
+    setJobTitle('')
+    setPassword('')
+    setConfirmPassword('')
+  }
+
+  const startEditing = (member: WorkspaceMember) => {
+    setEditingMember(member)
+    setFullName(member.full_name)
+    setEmail(member.email)
+    setBirthDate(member.birth_date ?? '')
+    setJobTitle(member.job_title)
+    setPassword('')
+    setConfirmPassword('')
+    document.getElementById('equipe-form')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (password !== confirmPassword) {
+    if (!editingMember && password !== confirmPassword) {
       showToast('As senhas não coincidem.', 'error')
       return
     }
     setBusy(true)
     try {
       const result = await invoke({
-        action: 'create',
+        action: editingMember ? 'update' : 'create',
+        ...(editingMember ? { userId: editingMember.user_id } : { password }),
         fullName,
         email,
         birthDate,
         jobTitle,
-        password,
       })
-      showToast(result.message ?? 'Colaborador cadastrado com acesso ativo.')
-      setFullName('')
-      setEmail('')
-      setBirthDate('')
-      setJobTitle('')
-      setPassword('')
-      setConfirmPassword('')
+      showToast(result.message ?? (editingMember ? 'Colaborador atualizado.' : 'Colaborador cadastrado com acesso ativo.'))
+      clearForm()
       await loadMembers()
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Não foi possível cadastrar o colaborador.', 'error')
+      showToast(error instanceof Error ? error.message : 'Não foi possível salvar o colaborador.', 'error')
     } finally {
       setBusy(false)
     }
@@ -135,11 +152,16 @@ export default function Equipe() {
         <div className="space-y-4">
           {isOwner && (
             <Card>
-              <h2 className="mb-1 text-base font-semibold text-slate-800">Cadastrar colaborador</h2>
+              <div id="equipe-form" />
+              <h2 className="mb-1 text-base font-semibold text-slate-800">
+                {editingMember ? `Editar ${editingMember.full_name || editingMember.email}` : 'Cadastrar colaborador'}
+              </h2>
               <p className="mb-4 text-sm text-slate-500">
-                O acesso será criado na hora. A senha é protegida pelo Supabase; compartilhe as credenciais com o colaborador por um canal seguro.
+                {editingMember
+                  ? 'Atualize os dados do colaborador. Se alterar o e-mail, ele deverá usar o novo endereço para entrar.'
+                  : 'O acesso será criado na hora. A senha é protegida pelo Supabase; compartilhe as credenciais com o colaborador por um canal seguro.'}
               </p>
-              <form onSubmit={handleCreate} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <Field label="Nome completo">
                     <input
@@ -188,34 +210,43 @@ export default function Equipe() {
                       onChange={(event) => setJobTitle(event.target.value)}
                     />
                   </Field>
-                  <Field label="Senha inicial">
-                    <input
-                      type="password"
-                      required
-                      minLength={8}
-                      maxLength={128}
-                      autoComplete="new-password"
-                      className={inputClass}
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                    />
-                  </Field>
-                  <Field label="Confirmar senha">
-                    <input
-                      type="password"
-                      required
-                      minLength={8}
-                      maxLength={128}
-                      autoComplete="new-password"
-                      className={inputClass}
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                    />
-                  </Field>
+                  {!editingMember && (
+                    <>
+                      <Field label="Senha inicial">
+                        <input
+                          type="password"
+                          required
+                          minLength={8}
+                          maxLength={128}
+                          autoComplete="new-password"
+                          className={inputClass}
+                          value={password}
+                          onChange={(event) => setPassword(event.target.value)}
+                        />
+                      </Field>
+                      <Field label="Confirmar senha">
+                        <input
+                          type="password"
+                          required
+                          minLength={8}
+                          maxLength={128}
+                          autoComplete="new-password"
+                          className={inputClass}
+                          value={confirmPassword}
+                          onChange={(event) => setConfirmPassword(event.target.value)}
+                        />
+                      </Field>
+                    </>
+                  )}
                 </div>
-                <div className="flex justify-end">
+                <div className="flex flex-col justify-end gap-2 sm:flex-row">
+                  {editingMember && (
+                    <Button type="button" variant="secondary" disabled={busy} onClick={clearForm} className="w-full sm:w-auto">
+                      Cancelar
+                    </Button>
+                  )}
                   <Button type="submit" disabled={busy} className="w-full sm:w-auto">
-                    {busy ? 'Cadastrando...' : 'Cadastrar colaborador'}
+                    {busy ? 'Salvando...' : editingMember ? 'Salvar alterações' : 'Cadastrar colaborador'}
                   </Button>
                 </div>
               </form>
@@ -267,6 +298,9 @@ export default function Equipe() {
                     </div>
                     {isOwner && member.role === 'member' && (
                       <div className="flex shrink-0 gap-2">
+                        <Button variant="secondary" small disabled={busy} onClick={() => startEditing(member)}>
+                          Editar
+                        </Button>
                         {member.status === 'revoked' ? (
                           <Button
                             variant="secondary"

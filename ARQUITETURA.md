@@ -57,7 +57,7 @@ A marca exibida na interface é GraficaUp Studio; o repositório mantém o nome 
 | Contas a Pagar | Cadastra e quita despesas; rota e linhas do banco disponíveis apenas para `owner` (RLS). | `contas_pagar` |
 | Relatórios | Abas de Vendas, Fluxo de Caixa e Clientes, com período e exportação CSV; acesso de `owner`. | Faturas, pagamentos, vendas rápidas, despesas e clientes. |
 | Perfil da Empresa | Dados de cadastro, Inscrição Estadual opcional, logo, chave PIX, prefixo e próximos números. Consulta CEP pelo serviço ViaCEP. | `empresa` |
-| Equipe | No modo Supabase, proprietário cadastra, revoga e reativa colaboradores. | `workspace_members`, usuários do Supabase Auth |
+| Equipe | No modo Supabase, proprietário cadastra, edita nome/e-mail/nascimento/função, revoga e reativa colaboradores. | `workspace_members`, usuários do Supabase Auth |
 | Configurações | Exporta JSON, importa backup atual ou formato legado e informa o modo de armazenamento. No Supabase, a exportação contém os registros que a sessão pode consultar segundo a RLS. | Coleções do espaço permitidas à sessão |
 | Assistente | Opcional no modo Supabase: consulta dados e propõe criar cliente, orçamento ou venda; ações exigem confirmação. Para `member`, não habilita resumo financeiro nem listagem do histórico de vendas rápidas; conserva consultas operacionais e de faturas. | Consultas RLS; NVIDIA; ações via Edge Function |
 
@@ -121,7 +121,7 @@ O adaptador traduz `camelCase` do TypeScript para `snake_case` do banco. Favorit
 
 - Com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`, o app entra no modo nuvem e pede login. Sem essas variáveis, entra no modo local.
 - O primeiro login pode criar o espaço de proprietário por `ensure_workspace_membership()`; as credenciais de colaboradores são criadas pelo servidor na função `gerenciar-colaboradores`.
-- A criação, revogação e reativação de usuários é validada no backend como operação de `owner`.
+- A criação, edição, revogação e reativação de colaboradores é validada no backend como operação de `owner`. Na edição de e-mail, a função atualiza o Supabase Auth e o cadastro da equipe, com tentativa de reversão caso o segundo passo falhe.
 - `current_workspace_role()` devolve o papel ativo da sessão; `current_workspace_owner_id()` deixa de aceitar associações `invited` ou `revoked`.
 - RLS restringe `contas_pagar` a `owner`. `vendas_rapidas` pode ser inserida por membro quando `vendedor_id` corresponde à sessão; `member` lê as vendas do próprio espaço, mas não as atualiza nem exclui. A lista do PDV permite pesquisa e paginação de 10. O histórico de cliente combina `orcamentos` e `vendas_rapidas` filtradas por `clienteId`. Tabelas `faturas`/`pagamentos` continuam compartilhadas: sustentam a tela Faturas permitida aos membros. Contas a Receber é bloqueada na interface/rota, mas não tem tabela isolada própria.
 - A equipe ainda não pode ser controlada no modo local.

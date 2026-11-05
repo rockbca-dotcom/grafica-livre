@@ -213,6 +213,19 @@ Não há um papel `admin` separado no código atual. Esta atualização deve usa
 - O valor persiste nos modos local e Supabase e é preservado em backups antigos/novos.
 - Quando não preenchido, o comprovante não mostra uma linha de IE vazia.
 
+### EQUIPE-01 — Editar colaboradores cadastrados
+
+**Origem:** pedido do usuário em 05/11/2026, com os campos confirmados na conversa.
+
+**Regra:** um `owner` pode atualizar nome, e-mail, data de nascimento e função de um colaborador já cadastrado na tela Equipe. O e-mail atualizado passa a ser o endereço de login.
+
+**Critérios de aceite:**
+
+- A ação **Editar** preenche o formulário com os dados atuais e permite salvar ou cancelar.
+- A função de servidor valida os quatro campos e confirma que o alvo é um `member` do mesmo espaço; um colaborador não pode editar outro usuário.
+- Ao concluir a mudança de e-mail, o Supabase Auth e `workspace_members` ficam sincronizados. E-mail já usado é rejeitado; se a gravação do cadastro falhar, a função tenta restaurar o e-mail anterior e informa quando a reversão exigir suporte.
+- A edição não altera senha, papel, status nem registros históricos. A gestão de equipe continua indisponível no modo local.
+
 ### VIS-01 — Aplicar a identidade visual GraficaUp Studio
 
 **Prioridade:** P1
@@ -236,7 +249,7 @@ Não há um papel `admin` separado no código atual. Esta atualização deve usa
 - Bloquear valores, status e operações de pagamento dentro da tela Faturas.
 - Proibir colaborador de registrar pagamentos em Faturas ou vendas no PDV.
 - Ocultar preços de produtos e valores de orçamentos/faturas necessários ao atendimento.
-- Criar um novo papel `admin` ou alterar o gerenciamento de equipe.
+- Criar um novo papel `admin` ou alterar as permissões de acesso da equipe.
 - Criar categorias, relatórios de popularidade ou automação baseada no número de vendas.
 - Refazer as telas de orçamento, cliente ou equipe com base apenas nas imagens enviadas.
 
@@ -254,6 +267,7 @@ Os itens acima não fazem parte do escopo confirmado pelo cliente.
 8. **Inscrição Estadual — 22/10/2026:** acrescentar campo opcional ao Perfil da Empresa e mostrá-lo no comprovante quando estiver preenchido.
 9. **Vendedor — 22/10/2026:** salvar a identidade e o nome da pessoa autenticada nas vendas novas do modo nuvem. Vendas antigas e o modo local sem login não recebem atribuição presumida.
 10. **Identidade visual — 03/11/2026:** usar o logo e a paleta violeta/lilás da GraficaUp Studio no login e no painel interno. A atualização é visual e preserva as funcionalidades.
+11. **Edição da equipe — 05/11/2026:** permitir ao proprietário atualizar nome, e-mail, nascimento e função dos colaboradores existentes, preservando o papel e a senha.
 
 ## 9. Requisitos de segurança e dados
 

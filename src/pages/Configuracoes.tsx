@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext'
 import { Button, Card, PageHeader } from '../components/ui'
 
 export default function Configuracoes() {
-  const { db, exportBackup, importBackup } = useData()
+  const { exportBackup, importBackup } = useData()
   const { cloudMode } = useAuth()
   const { showToast } = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -28,10 +28,6 @@ export default function Configuracoes() {
     }
   }
 
-  const totalRegistros =
-    db.clientes.length + db.itens.length + db.orcamentos.length +
-    db.faturas.length + db.contasPagar.length
-
   return (
     <div>
       <PageHeader title="Configurações" subtitle="Backup, importação e armazenamento" />
@@ -40,8 +36,8 @@ export default function Configuracoes() {
         <Card>
           <h3 className="mb-2 text-sm font-semibold text-slate-700">💾 Backup</h3>
           <p className="mb-4 text-sm text-slate-500">
-            Baixa um arquivo JSON com todos os dados ({totalRegistros} registros). Guarde-o em
-            local seguro — ele pode ser restaurado a qualquer momento.
+            Baixa um arquivo JSON com os dados operacionais disponíveis para sua conta.
+            Guarde-o em local seguro. Contas de usuário e senhas não estão incluídas.
           </p>
           <Button onClick={exportBackup}>⬇ Exportar backup</Button>
         </Card>
@@ -51,7 +47,10 @@ export default function Configuracoes() {
           <p className="mb-4 text-sm text-slate-500">
             Aceita o backup deste sistema <strong>ou o backup do app antigo</strong> (botão
             "Exportar dados" da versão anterior). Valores e cadastros são convertidos
-            automaticamente. <span className="text-red-600">Atenção: substitui todos os dados atuais.</span>
+            automaticamente. <span className="text-red-600">
+              Atenção: substitui todos os dados atuais.
+              {cloudMode && ' Uma falha na importação em nuvem pode deixar dados incompletos; confira um backup externo antes de continuar.'}
+            </span>
           </p>
           <input
             ref={fileRef}
@@ -73,8 +72,8 @@ export default function Configuracoes() {
           <h3 className="mb-2 text-sm font-semibold text-slate-700">☁️ Armazenamento</h3>
           {cloudMode ? (
             <p className="text-sm text-emerald-700">
-              ✅ Conectado ao Supabase — seus dados estão salvos na nuvem com login e backup
-              automático, acessíveis de qualquer dispositivo.
+              ✅ Conectado ao Supabase — seus dados estão salvos na nuvem e acessíveis com login.
+              A exportação acima é manual; confirme separadamente se há backup do banco.
             </p>
           ) : (
             <div className="text-sm text-slate-600">
