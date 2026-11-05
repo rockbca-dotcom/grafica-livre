@@ -6,7 +6,7 @@
 
 ## Resumo para decisão
 
-1. FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05, EMP-01 e VIS-01 estão no código. Histórico, busca/paginação, perfil com Inscrição Estadual e fluxo do comprovante foram conferidos localmente com dados fictícios. VIS-01 atualiza logo, cores e tipografia sem alterar operações. Para o modo nuvem, as migrações pendentes precisam ser aplicadas e a RLS/autoria ainda deve ser validada em um banco Supabase.
+1. FIN-01, PDV-01, HIST-01, PDV-02, PDV-03, PDV-04, PDV-05, EMP-01 e VIS-01 estão no código. Histórico, busca/paginação, perfil com Inscrição Estadual e fluxo do comprovante foram conferidos localmente com dados fictícios. VIS-01 atualiza logo, cores e tipografia sem alterar operações. As migrações constam no projeto Supabase online; a RLS/autoria ainda precisa de validação com contas reais.
 2. A restauração de backup substitui os dados atuais e não é validada nem transacional no Supabase; uma falha no meio pode deixar dados incompletos.
 3. `npm audit` sinaliza cinco dependências com vulnerabilidades classificadas como altas.
 4. Lint e build funcionaram. O lint apontou 10 avisos; o build apontou um aviso de arquivos JavaScript grandes. Não existe comando/suíte de teste automatizado configurado.
@@ -20,8 +20,8 @@
 - A nova ação de edição grava apenas `email`, `full_name`, `birth_date` e `job_title` em `workspace_members` e, se o e-mail mudar, atualiza o e-mail da mesma conta no Supabase Auth. Não há escrita ou exclusão de clientes, pedidos, vendas, faturas ou pagamentos nesse fluxo. O identificador da conta e do espaço não muda.
 - A atualização de e-mail envolve duas chamadas de serviço e não é transacional. Se a segunda falhar, a função tenta restaurar o e-mail anterior; falha de rede ou da reversão ainda pode deixar os endereços divergentes e exigir correção manual. Os registros de negócio continuam vinculados aos mesmos identificadores.
 - O plano `free` não oferece backup diário automático conforme a [documentação do Supabase](https://supabase.com/docs/guides/platform/backups). A integração disponível não lista backups e a página de backups exigiu login no navegador; portanto, nenhum ponto de restauração foi confirmado. A exportação JSON do app é manual e não inclui contas e senhas do Supabase Auth.
-- Antes de publicar, obter um backup completo de esquema e dados com o [procedimento oficial do Supabase CLI](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore), guardá-lo fora do projeto e conferir a possibilidade de restauração. O JSON exportado pelo app não substitui essa cópia.
-- O texto de Configurações que prometia “backup automático” e a contagem incompleta dos registros exportados foram corrigidos no código local. A importação de backup continua com o risco descrito em AUD-03. A edição da equipe ainda não foi publicada nem testada com contas reais.
+- A publicação da edição da equipe ocorreu sem backup completo confirmado. Para reduzir o risco de perda, obter um backup de esquema e dados com o [procedimento oficial do Supabase CLI](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore), guardá-lo fora do projeto e conferir a possibilidade de restauração. O JSON exportado pelo app não substitui essa cópia.
+- A tela e a Edge Function foram publicadas em 05/11/2026. A Vercel concluiu o deploy de produção; a URL principal respondeu HTTP 200. As contagens de referência permaneceram iguais após o deploy, sem integrantes sem Auth nem e-mails divergentes. A edição ainda não foi testada com contas reais.
 
 ### AUD-01 — Restrições por papel e histórico do cliente precisam ser aplicados no ambiente online
 
@@ -56,7 +56,7 @@ Avisos consultados pelo próprio relatório:
 
 **Próximo passo recomendado:** validar versão e estrutura do arquivo, mostrar uma prévia e contagens corretas, criar backup de segurança antes da troca e executar a substituição de modo atômico no servidor. Até lá, exportar e conferir um backup externo antes de importar.
 
-**Estado em 05/11/2026:** a interface passou a alertar sobre o risco de importação parcial no modo nuvem no código local. O fluxo de importação continua sem transação e não foi corrigido nesta mudança.
+**Estado em 05/11/2026:** a interface publicada alerta sobre o risco de importação parcial no modo nuvem. O fluxo de importação continua sem transação e não foi corrigido nesta mudança.
 
 ### AUD-04 — Backup automático é afirmado na tela, mas não é implementado pelo app
 
@@ -65,7 +65,7 @@ Avisos consultados pelo próprio relatório:
 
 **Próximo passo recomendado:** a interface e o guia devem dizer claramente que existe exportação manual e que o responsável precisa configurar/verificar a política de backup do provedor. Manter exportações externas periódicas.
 
-**Estado em 05/11/2026:** o texto da interface foi corrigido no código local; publicação pendente. O guia já descrevia a exportação manual.
+**Estado em 05/11/2026:** o texto corrigido foi publicado. O guia já descrevia a exportação manual.
 
 ### AUD-05 — Dados e perguntas do assistente são enviados à NVIDIA
 
@@ -102,7 +102,7 @@ Avisos consultados pelo próprio relatório:
 
 **Próximo passo recomendado:** contar todas as coleções exportadas ou retirar o número.
 
-**Estado em 05/11/2026:** a contagem foi retirada da interface no código local; publicação pendente.
+**Estado em 05/11/2026:** a contagem foi retirada da interface publicada.
 
 ### AUD-10 — Impressão depende do diálogo e do driver da impressora
 

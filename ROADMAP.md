@@ -106,7 +106,7 @@
 - [x] Permitir ao proprietário alterar nome, e-mail, data de nascimento e função na tela Equipe.
 - [x] Validar autorização e dados na função `gerenciar-colaboradores`, sincronizando o novo e-mail com o Supabase Auth.
 - [ ] Validar a edição com uma conta de proprietário e outra de colaborador no Supabase online.
-- [ ] Publicar a tela e a Edge Function atualizadas.
+- [x] Publicar a tela e a Edge Function atualizadas.
 
 **Aceite:** critérios de `EQUIPE-01` em [PRD.md](PRD.md).
 
