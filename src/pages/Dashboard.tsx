@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -17,6 +17,9 @@ export default function Dashboard() {
   const { db, clienteById, valorPago, faturaStatusEfetivo } = useData()
   const { cloudMode, role } = useAuth()
   const isOwner = !cloudMode || role === 'owner'
+  // Por privacidade, os indicadores financeiros começam ocultos a cada acesso.
+  const [mostrarValores, setMostrarValores] = useState(false)
+  const valorOculto = '••••••'
 
   const mesAtual = monthKey(todayISO())
 
@@ -129,37 +132,65 @@ export default function Dashboard() {
         })}
       />
 
+      {isOwner && (
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setMostrarValores((valor) => !valor)}
+            aria-label={mostrarValores ? 'Ocultar valores financeiros' : 'Mostrar valores financeiros'}
+            aria-pressed={mostrarValores}
+            className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs font-semibold text-violet-700 shadow-sm transition-colors hover:bg-violet-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+          >
+            {mostrarValores ? (
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 3l18 18" />
+                <path d="M10.6 5.2A10.5 10.5 0 0 1 12 5c5.5 0 9.5 7 9.5 7a16.7 16.7 0 0 1-3.3 4.1" />
+                <path d="M6.4 6.5C3.9 8.1 2.5 12 2.5 12s4 7 9.5 7c1.4 0 2.7-.4 3.9-1" />
+                <path d="M10 10a3 3 0 0 0 4 4" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M2.5 12s3.9-7 9.5-7 9.5 7 9.5 7-3.9 7-9.5 7S2.5 12 2.5 12Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+            {mostrarValores ? 'Ocultar valores' : 'Mostrar valores'}
+          </button>
+        </div>
+      )}
+
       <div className={`grid grid-cols-1 gap-4 ${isOwner ? 'sm:grid-cols-2 xl:grid-cols-4' : 'sm:grid-cols-2'}`}>
         <KpiCard
           label="Orçamentos do mês"
-          value={String(stats.orcamentosMesQtd)}
-          {...(isOwner ? { hint: formatCents(stats.orcamentosMesValor) } : {})}
+          value={isOwner && !mostrarValores ? valorOculto : String(stats.orcamentosMesQtd)}
+          {...(isOwner ? { hint: mostrarValores ? formatCents(stats.orcamentosMesValor) : 'Valor oculto' } : {})}
           to="/orcamentos"
         />
         {isOwner && (
           <>
             <KpiCard
               label="Entradas no mês"
-              value={formatCents(stats.recebidoMes)}
+              value={mostrarValores ? formatCents(stats.recebidoMes) : valorOculto}
               tone="good"
-              hint="Faturas + vendas rápidas"
+              hint={mostrarValores ? 'Faturas + vendas rápidas' : 'Valor oculto'}
               to="/relatorios"
             />
             <KpiCard
               label="A receber"
-              value={formatCents(stats.aReceber)}
-              hint={
-                stats.vencidasReceber > 0
-                  ? `${formatCents(stats.vencidasReceber)} vencido`
-                  : `${stats.faturasAbertasQtd} fatura(s) em aberto`
+              value={mostrarValores ? formatCents(stats.aReceber) : valorOculto}
+              hint={mostrarValores
+                ? (stats.vencidasReceber > 0
+                    ? `${formatCents(stats.vencidasReceber)} vencido`
+                    : `${stats.faturasAbertasQtd} fatura(s) em aberto`)
+                : 'Valor oculto'
               }
               tone={stats.vencidasReceber > 0 ? 'bad' : 'default'}
               to="/contas-receber"
             />
             <KpiCard
               label="A pagar"
-              value={formatCents(stats.aPagar)}
-              hint={`Despesas pagas no mês: ${formatCents(stats.pagoMes)}`}
+              value={mostrarValores ? formatCents(stats.aPagar) : valorOculto}
+              hint={mostrarValores ? `Despesas pagas no mês: ${formatCents(stats.pagoMes)}` : 'Valor oculto'}
               tone="warn"
               to="/contas-pagar"
             />
