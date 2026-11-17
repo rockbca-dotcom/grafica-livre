@@ -15,6 +15,7 @@ import Producao from './pages/Producao'
 import ContasReceber from './pages/ContasReceber'
 import ContasPagar from './pages/ContasPagar'
 import Relatorios from './pages/Relatorios'
+import Metas from './pages/Metas'
 import Perfil from './pages/Perfil'
 import Configuracoes from './pages/Configuracoes'
 import Equipe from './pages/Equipe'
@@ -77,6 +78,7 @@ function Gate() {
             <Route path="contas-receber" element={<ContasReceber />} />
             <Route path="contas-pagar" element={<ContasPagar />} />
             <Route path="relatorios" element={<Relatorios />} />
+            <Route path="metas" element={<Metas />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
