@@ -66,6 +66,11 @@ declare
   v_margem numeric;
   v_faturamento numeric;
 begin
+  -- A RPC executa com privilégios elevados, mas exige identidade autenticada.
+  -- Funções de membership usam auth.uid() e só aceitam vínculos ativos.
+  if (select auth.uid()) is null then
+    raise exception 'Autenticação necessária' using errcode = '42501';
+  end if;
   if v_owner is null or v_role is null or v_role not in ('owner', 'member') then
     raise exception 'Acesso não autorizado' using errcode = '42501';
   end if;
