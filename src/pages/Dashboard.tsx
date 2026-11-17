@@ -4,6 +4,7 @@ import {
   Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import { useData } from '../context/DataContext'
+import MetasIndicadores from '../components/MetasIndicadores'
 import { useAuth } from '../context/AuthContext'
 import { Card, KpiCard, PageHeader, StatusBadge } from '../components/ui'
 import { formatCents } from '../lib/money'
@@ -193,6 +194,9 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <div className="mt-5">
+            <MetasIndicadores />
+          </div>
         </Card>}
 
         <Card className={isOwner ? '' : 'max-w-3xl'}>
@@ -254,6 +258,8 @@ export default function Dashboard() {
           )}
         </Card>
       </div>
+
+      {!isOwner && <div className="mt-5"><MetasIndicadores /></div>}
 
       <Card className="mt-5">
         <h3 className="mb-3 text-sm font-semibold text-slate-700">Orçamentos recentes</h3>
