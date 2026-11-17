@@ -15,6 +15,7 @@ const NAV = [
   { to: '/clientes', label: 'Clientes', icon: '👥' },
   { to: '/itens', label: 'Produtos', icon: '📦' },
   { to: '/relatorios', label: 'Relatórios', icon: '📈' },
+  { to: '/metas', label: 'Metas', icon: '🎯' },
   { to: '/perfil', label: 'Perfil da Empresa', icon: '🏢' },
   { to: '/equipe', label: 'Equipe', icon: '👥' },
   { to: '/configuracoes', label: 'Configurações', icon: '⚙️' },
@@ -53,7 +54,7 @@ export default function Layout() {
         <nav className="mt-2 flex max-h-[calc(100vh-11rem)] flex-col gap-0.5 overflow-y-auto px-3 pb-4">
           {NAV.filter((item) => {
             if (item.to === '/equipe') return cloudMode && session
-            const financial = ['/contas-receber', '/contas-pagar', '/relatorios'].includes(item.to)
+            const financial = ['/contas-receber', '/contas-pagar', '/relatorios', '/metas'].includes(item.to)
             return !financial || !cloudMode || role === 'owner'
           }).map((item) => (
             <NavLink
