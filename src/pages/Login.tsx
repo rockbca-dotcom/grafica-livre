@@ -11,6 +11,7 @@ export default function Login() {
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -60,15 +61,26 @@ export default function Login() {
           </Field>
           {mode !== 'reset' && (
             <Field label="Senha">
-              <input
-                type="password"
-                required
-                minLength={6}
-                className={inputClass}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength={6}
+                  className={`${inputClass} pr-20`}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 right-2 flex items-center rounded-md px-2 text-xs font-semibold text-violet-700 hover:text-violet-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+                >
+                  {showPassword ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
             </Field>
           )}
 
@@ -82,12 +94,12 @@ export default function Login() {
 
         <div className="mt-5 flex flex-col gap-1 text-center text-sm">
           {mode === 'login' && (
-            <button className="text-violet-700 hover:text-violet-900 hover:underline" onClick={() => setMode('reset')}>
+            <button className="text-violet-700 hover:text-violet-900 hover:underline" onClick={() => { setShowPassword(false); setMode('reset') }}>
               Esqueci minha senha
             </button>
           )}
           {mode !== 'login' && (
-            <button className="text-violet-700 hover:text-violet-900 hover:underline" onClick={() => setMode('login')}>
+            <button className="text-violet-700 hover:text-violet-900 hover:underline" onClick={() => { setShowPassword(false); setMode('login') }}>
               ← Voltar para o login
             </button>
           )}
