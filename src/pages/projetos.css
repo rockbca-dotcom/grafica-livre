@@ -67,3 +67,6 @@
   .projeto-impressao tr,.projeto-impressao img{break-inside:avoid}
   .projeto-impressao img{display:inline-block;width:30%;max-height:60mm;object-fit:contain;margin:.1rem .3rem .4rem 0}
 }
+/* Reserve room for the fixed assistant and notifications without changing the global shell. */
+.projeto-acao{padding-bottom:4.75rem}
+@media(min-width:701px){.projeto-acao{padding-inline-end:9rem}}
