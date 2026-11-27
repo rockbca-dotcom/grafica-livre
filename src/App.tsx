@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { HashRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { DataProvider } from './context/DataContext'
@@ -20,6 +21,8 @@ import Perfil from './pages/Perfil'
 import Configuracoes from './pages/Configuracoes'
 import Equipe from './pages/Equipe'
 import DefinirSenha from './pages/DefinirSenha'
+
+const Projetos = lazy(() => import('./pages/Projetos'))
 
 function Gate() {
   const { cloudMode, session, loading, role, roleLoading, signOut } = useAuth()
@@ -79,6 +82,7 @@ function Gate() {
             <Route path="contas-pagar" element={<ContasPagar />} />
             <Route path="relatorios" element={<Relatorios />} />
             <Route path="metas" element={<Metas />} />
+            <Route path="projetos" element={<Suspense fallback={<p>Carregando projetos…</p>}><Projetos /></Suspense>} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
