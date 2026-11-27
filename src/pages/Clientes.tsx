@@ -13,10 +13,12 @@ import { buscarCep } from '../lib/viacep'
 import { buscarCnpj } from '../lib/cnpj'
 import { formatDateBR } from '../lib/dates'
 import { formatCents } from '../lib/money'
+import { abrirPdf } from '../lib/abrirPdf'
 
 type PedidoHistorico = {
   id: string
-  tipo: string
+  tipo: 'Orçamento' | 'Venda direta (PDV)'
+  documentoId: string
   numero: string
   data: string
   criadoEm: string
@@ -256,6 +258,7 @@ export default function Clientes() {
   const [historicoCliente, setHistoricoCliente] = useState<Cliente | null>(null)
   const [deleting, setDeleting] = useState<Cliente | null>(null)
   const [saving, setSaving] = useState(false)
+  const [gerandoPdf, setGerandoPdf] = useState<string | null>(null)
   const pedidosHistorico = useMemo<PedidoHistorico[]>(() => {
     if (!historicoCliente) return []
     return [
@@ -263,7 +266,8 @@ export default function Clientes() {
         .filter((orcamento) => orcamento.clienteId === historicoCliente.id)
         .map((orcamento) => ({
           id: `orcamento-${orcamento.id}`,
-          tipo: 'Orçamento',
+          tipo: 'Orçamento' as const,
+          documentoId: orcamento.id,
           numero: orcamento.numero,
           data: orcamento.data,
           criadoEm: orcamento.criadoEm,
@@ -275,7 +279,8 @@ export default function Clientes() {
         .filter((venda) => venda.clienteId === historicoCliente.id)
         .map((venda) => ({
           id: `venda-${venda.id}`,
-          tipo: 'Venda direta (PDV)',
+          tipo: 'Venda direta (PDV)' as const,
+          documentoId: venda.id,
           numero: venda.numero,
           data: venda.data,
           criadoEm: venda.criadoEm,
@@ -285,6 +290,38 @@ export default function Clientes() {
         })),
     ].sort((a, b) => b.data.localeCompare(a.data) || b.criadoEm.localeCompare(a.criadoEm))
   }, [db.orcamentos, db.vendasRapidas, historicoCliente])
+
+  const abrirPedido = async (pedido: PedidoHistorico) => {
+    if (!historicoCliente || gerandoPdf) return
+    const cliente = historicoCliente
+    const numero = pedido.numero.replace(/[^A-Za-z0-9._-]/g, '-')
+    setGerandoPdf(pedido.id)
+    try {
+      const resultado = await abrirPdf(async () => {
+        const pdf = await import('../pdf/documentoPdf')
+        if (pedido.tipo === 'Orçamento') {
+          const orcamento = db.orcamentos.find(o => o.id === pedido.documentoId && o.clienteId === cliente.id)
+          if (!orcamento) throw new Error('Orçamento indisponível.')
+          return pdf.orcamentoPdfBlob(orcamento, cliente, db.empresa)
+        }
+        const venda = db.vendasRapidas.find(v => v.id === pedido.documentoId && v.clienteId === cliente.id)
+        if (!venda) throw new Error('Venda indisponível.')
+        return pdf.vendaRapidaPdfBlob(venda, cliente, db.empresa)
+      }, (pedido.tipo === 'Orçamento' ? 'orcamento-' : 'comprovante-') + numero + '.pdf')
+      if (resultado === 'baixado') showToast('O PDF foi enviado para os downloads do navegador.')
+    } catch {
+      showToast('Não foi possível abrir o PDF deste pedido. Tente novamente.', 'error')
+    } finally {
+      setGerandoPdf(null)
+    }
+  }
+
+  const botaoPdf = (pedido: PedidoHistorico, classe: string) => (
+    <Button type="button" small variant="secondary" className={classe} disabled={gerandoPdf !== null}
+      aria-label={'Abrir PDF de ' + pedido.numero} onClick={() => void abrirPedido(pedido)}>
+      {gerandoPdf === pedido.id ? 'Gerando…' : 'Abrir PDF'}
+    </Button>
+  )
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -438,9 +475,15 @@ export default function Clientes() {
               <tbody>
                 {pedidosHistorico.map((pedido) => (
                   <tr key={pedido.id} className="border-b border-slate-100 last:border-0">
-                    <td className="whitespace-nowrap px-3 py-3">{formatDateBR(pedido.data)}</td>
+                    <td className="whitespace-nowrap px-3 py-3">
+                      {formatDateBR(pedido.data)}
+                      {botaoPdf(pedido, 'mt-1 block sm:hidden')}
+                    </td>
                     <td className="whitespace-nowrap px-3 py-3">{pedido.tipo}</td>
-                    <td className="whitespace-nowrap px-3 py-3 font-medium text-slate-700">{pedido.numero}</td>
+                    <td className="whitespace-nowrap px-3 py-3 font-medium text-slate-700">
+                      <div>{pedido.numero}</div>
+                      {botaoPdf(pedido, 'mt-1 hidden sm:inline-block')}
+                    </td>
                     <td className="max-w-sm px-3 py-3 text-slate-600">
                       {pedido.itens.map((item) => `${item.qtd} × ${item.descricao}`).join(', ') || '—'}
                     </td>

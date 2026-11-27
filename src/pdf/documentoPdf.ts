@@ -1,9 +1,10 @@
 import pdfMake from 'pdfmake/build/pdfmake'
 import * as pdfFontsModule from 'pdfmake/build/vfs_fonts'
 import type { Content, TDocumentDefinitions, TableCell } from 'pdfmake/interfaces'
-import type { Cliente, Empresa, Fatura, Orcamento } from '../types'
+import type { Cliente, Empresa, Fatura, Orcamento, VendaRapida } from '../types'
 import { formatCents } from '../lib/money'
 import { addDays, formatDateBR } from '../lib/dates'
+import { formaPagamentoLabel } from '../lib/reciboVendaRapida'
 
 // Localiza o mapa de fontes (base64) — o formato do vfs_fonts varia entre versões:
 // em algumas fica em .vfs / .pdfMake.vfs / .default; na 0.3.x o módulo É o mapa
@@ -267,6 +268,38 @@ export function gerarOrcamentoPdf(
   empresa: Empresa,
 ) {
   pdfMake.createPdf(orcamentoDocDef(orcamento, cliente, empresa)).download(`orcamento-${orcamento.numero}.pdf`)
+}
+
+/** Mesmo documento utilizado na tela de Orçamentos, sem forçar download. */
+export function orcamentoPdfBlob(orcamento: Orcamento, cliente: Cliente, empresa: Empresa): Promise<Blob> {
+  return (pdfMake.createPdf(orcamentoDocDef(orcamento, cliente, empresa)) as unknown as CreatedPdf).getBlob()
+}
+
+export function vendaRapidaPdfBlob(venda: VendaRapida, cliente: Cliente, empresa: Empresa): Promise<Blob> {
+  const dados: Content[] = [
+    cabecalho(empresa, 'CUPOM NÃO FISCAL', venda.numero),
+    blocoCliente(cliente),
+    { text: 'Data da venda: ' + formatDateBR(venda.data) + '  •  Atendente: ' + (venda.vendedorNome || 'Não identificado'), margin: [0, 0, 0, 12] },
+    {
+      table: {
+        headerRows: 1,
+        widths: ['*', 'auto', 'auto', 'auto'],
+        body: [
+          ['Descrição', 'Qtd.', 'Valor unitário', 'Total'].map(text => ({ text, bold: true, fillColor: AZUL, color: '#fff' })),
+          ...venda.itens.map(i => [
+            i.descricao, { text: String(i.qtd), alignment: 'right' },
+            { text: formatCents(i.valorUnit), alignment: 'right' },
+            { text: formatCents(i.total), alignment: 'right' },
+          ] as TableCell[]),
+        ],
+      },
+      layout: 'lightHorizontalLines',
+    },
+    { text: 'Total: ' + formatCents(venda.total), bold: true, fontSize: 13, alignment: 'right', margin: [0, 12, 0, 4] },
+    { text: 'Pagamento: ' + formaPagamentoLabel(venda.formaPagamento), alignment: 'right', color: CINZA },
+  ]
+  const definicao: TDocumentDefinitions = { info: { title: 'Comprovante ' + venda.numero }, pageSize: 'A4', pageMargins: [36, 34, 36, 34], defaultStyle: { fontSize: 10, color: PRETO }, content: dados }
+  return (pdfMake.createPdf(definicao) as unknown as CreatedPdf).getBlob()
 }
 
 // Converte o documento pdfmake em base64 (sem o prefixo "data:...;base64,").
