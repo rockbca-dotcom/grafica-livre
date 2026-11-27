@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import type { ContaPagar } from '../types'
 import { useData } from '../context/DataContext'
 import { useToast } from '../context/ToastContext'
@@ -19,6 +20,7 @@ export const CATEGORIAS_DESPESA = [
   ['impostos', 'Impostos e taxas'],
   ['marketing', 'Marketing'],
   ['frete', 'Frete / transporte'],
+  ['projetos', 'Projetos'],
   ['outros', 'Outros'],
 ] as const
 
@@ -44,7 +46,8 @@ export default function ContasPagar() {
   const { db, saveContaPagar, deleteContaPagar } = useData()
   const { showToast } = useToast()
   const [search, setSearch] = useState('')
-  const [statusFiltro, setStatusFiltro] = useState('abertas')
+  const [params] = useSearchParams()
+  const [statusFiltro, setStatusFiltro] = useState(() => params.get('status') === 'pagas' ? 'pagas' : 'abertas')
   const [editing, setEditing] = useState<ContaPagar | null>(null)
   const [deleting, setDeleting] = useState<ContaPagar | null>(null)
   const [saving, setSaving] = useState(false)

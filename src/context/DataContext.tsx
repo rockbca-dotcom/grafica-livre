@@ -58,6 +58,7 @@ interface DataContextValue {
   deleteOrcamento: (id: string) => Promise<void>
   setOrcamentoStatus: (id: string, status: Orcamento['status']) => Promise<void>
   // Faturas
+  refreshFinanceAfterProject: () => Promise<void>
   createFatura: (f: Omit<Fatura, 'id' | 'numero' | 'criadoEm'>) => Promise<Fatura>
   saveFatura: (f: Fatura) => Promise<void>
   deleteFatura: (id: string) => Promise<void>
@@ -257,6 +258,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         )
       },
 
+      refreshFinanceAfterProject: async () => {
+        const novos = await a().load()
+        setDb(prev => ({ ...prev, faturas: novos.faturas, contasPagar: novos.contasPagar,
+          producaoCards: novos.producaoCards, empresa: { ...prev.empresa,
+            proximoNumFatura: Math.max(prev.empresa.proximoNumFatura, novos.empresa.proximoNumFatura),
+          },
+        }))
+      },
       createFatura: async (data) => {
         const seq = await a().proximoNumero('fatura')
         const numero = `FAT-${seq}`
