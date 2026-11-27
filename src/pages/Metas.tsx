@@ -13,6 +13,8 @@ import { Button, Card, Field, MoneyInput, PageHeader, inputClass } from '../comp
 const VAZIO = {
   custoFixoCentavos: 0,
   metaFaturamentoCentavos: 0,
+  metaGraficaCentavos: 0,
+  metaComunicacaoVisualCentavos: 0,
   margemContribuicaoPct: 0,
 }
 
@@ -37,6 +39,8 @@ export default function Metas() {
       setForm(meta ? {
         custoFixoCentavos: meta.custoFixoCentavos,
         metaFaturamentoCentavos: meta.metaFaturamentoCentavos,
+        metaGraficaCentavos: meta.metaGraficaCentavos ?? 0,
+        metaComunicacaoVisualCentavos: meta.metaComunicacaoVisualCentavos ?? 0,
         margemContribuicaoPct: meta.margemContribuicaoPct,
       } : VAZIO)
       setMargemTexto(meta ? String(meta.margemContribuicaoPct).replace('.', ',') : '')
@@ -61,7 +65,7 @@ export default function Metas() {
         return
       }
       const { data, error } = await supabase.from('metas_mensais')
-        .select('mes,custo_fixo_centavos,meta_faturamento_centavos,margem_contribuicao_pct')
+        .select('mes,custo_fixo_centavos,meta_faturamento_centavos,margem_contribuicao_pct,meta_grafica_centavos,meta_comunicacao_visual_centavos')
         .eq('owner_id', ownerId)
         .eq('mes', `${mes}-01`)
         .maybeSingle()
@@ -74,6 +78,8 @@ export default function Metas() {
           mes,
           custoFixoCentavos: Number(data.custo_fixo_centavos),
           metaFaturamentoCentavos: Number(data.meta_faturamento_centavos),
+          metaGraficaCentavos: data.meta_grafica_centavos == null ? null : Number(data.meta_grafica_centavos),
+          metaComunicacaoVisualCentavos: data.meta_comunicacao_visual_centavos == null ? null : Number(data.meta_comunicacao_visual_centavos),
           margemContribuicaoPct: Number(data.margem_contribuicao_pct),
         } : null)
       }
@@ -82,6 +88,7 @@ export default function Metas() {
     return () => { ativo = false }
   }, [mes, cloudMode, session?.user.id, podeEditar])
 
+  const totalSegmentado = form.metaGraficaCentavos + form.metaComunicacaoVisualCentavos
   const margem = Number(margemTexto.trim().replace(',', '.'))
   const equilibrio = margem > 0 && margem <= 100
     ? Math.round(form.custoFixoCentavos * 100 / margem)
@@ -90,16 +97,19 @@ export default function Metas() {
   const salvar = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!podeEditar || !mesValido(mes) ||
-      form.custoFixoCentavos <= 0 || form.metaFaturamentoCentavos <= 0 ||
+      form.custoFixoCentavos <= 0 ||
+      ![form.metaGraficaCentavos, form.metaComunicacaoVisualCentavos].every(n => Number.isSafeInteger(n) && n > 0 && n <= 999_999_999_999) ||
       !Number.isFinite(margem) || margem <= 0 || margem > 100 ||
       Math.round(margem * 100) !== margem * 100) {
-      showToast('Informe custo fixo, meta e margem válida (maior que 0 e até 100%).', 'error')
+      showToast('Informe o custo fixo, as duas metas e uma margem válida (maior que 0 e até 100%).', 'error')
       return
     }
     const meta: MetaMensal = {
       mes,
       custoFixoCentavos: form.custoFixoCentavos,
-      metaFaturamentoCentavos: form.metaFaturamentoCentavos,
+      metaFaturamentoCentavos: form.metaFaturamentoCentavos || totalSegmentado,
+      metaGraficaCentavos: form.metaGraficaCentavos,
+      metaComunicacaoVisualCentavos: form.metaComunicacaoVisualCentavos,
       margemContribuicaoPct: margem,
     }
     setSalvando(true)
@@ -115,6 +125,8 @@ export default function Metas() {
           mes: `${mes}-01`,
           custo_fixo_centavos: meta.custoFixoCentavos,
           meta_faturamento_centavos: meta.metaFaturamentoCentavos,
+          meta_grafica_centavos: meta.metaGraficaCentavos,
+          meta_comunicacao_visual_centavos: meta.metaComunicacaoVisualCentavos,
           margem_contribuicao_pct: meta.margemContribuicaoPct,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'owner_id,mes' })
@@ -156,13 +168,24 @@ export default function Metas() {
                   onChangeCents={(value) => setForm((prev) => ({ ...prev, custoFixoCentavos: value }))}
                   disabled={carregando || salvando || erroLeitura} />
               </Field>
-              <Field label="Meta de faturamento do mês (R$)">
-                <MoneyInput valueCents={form.metaFaturamentoCentavos}
-                  onChangeCents={(value) => setForm((prev) => ({ ...prev, metaFaturamentoCentavos: value }))}
+              <Field label="Meta Gráfica (R$)">
+                <MoneyInput valueCents={form.metaGraficaCentavos}
+                  onChangeCents={(value) => setForm((prev) => ({ ...prev, metaGraficaCentavos: value }))}
                   disabled={carregando || salvando || erroLeitura} />
               </Field>
+              <Field label="Meta Comunicação Visual (R$)">
+                <MoneyInput valueCents={form.metaComunicacaoVisualCentavos}
+                  onChangeCents={(value) => setForm((prev) => ({ ...prev, metaComunicacaoVisualCentavos: value }))}
+                  disabled={carregando || salvando || erroLeitura} />
+              </Field>
+              <div className="rounded-lg border border-violet-100 bg-violet-50 px-3 py-2">
+                <p className="text-xs font-medium text-violet-900">Meta Total (soma automática)</p>
+                <p className="text-lg font-bold text-violet-900">{totalSegmentado > 0 ? formatCents(totalSegmentado) : '—'}</p>
+              </div>
             </div>
 
+            {form.metaFaturamentoCentavos > 0 && form.metaGraficaCentavos === 0 && form.metaComunicacaoVisualCentavos === 0 &&
+              <p className="text-sm text-slate-600">Meta total anterior preservada: {formatCents(form.metaFaturamentoCentavos)}.</p>}
             <Field label="Margem de contribuição (%)">
               <input className={inputClass} type="text" inputMode="decimal"
                 placeholder="Ex.: 40" required value={margemTexto}
@@ -184,7 +207,9 @@ export default function Metas() {
             <p className="text-sm text-slate-500">
               O dashboard exibe somente os percentuais de progresso (0 a 100%) do mês atual,
               sem revelar custos, margens ou metas monetárias aos funcionários.
-              O faturamento considerado soma faturas não canceladas emitidas no mês e vendas do PDV.
+              O ponto de equilíbrio considera faturas não canceladas e vendas do PDV. As novas metas
+              usam apenas itens classificados. Frete, impostos e descontos são refletidos no valor final de cada documento,
+              distribuído proporcionalmente entre seus itens.
             </p>
 
             <Button type="submit" disabled={!podeEditar || carregando || salvando || erroLeitura}>

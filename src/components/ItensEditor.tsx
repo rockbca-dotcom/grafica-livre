@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext'
 import { Button, Modal, MoneyInput, inputClass } from '../components/ui'
 import { ItemFormFields, novoItem } from '../pages/Itens'
 import { formatCents } from '../lib/money'
+import { segmentoValido, SEGMENTOS } from '../lib/segmentos'
 
 export function novoDocumentoItem(impostoPct = 0): DocumentoItem {
   return {
@@ -54,6 +55,7 @@ export default function ItensEditor({
     if (!cat) return
     update(idx, {
       itemId,
+      segmento: cat.segmento ?? null,
       descricao: cat.descricao ? `${cat.nome} - ${cat.descricao}` : cat.nome,
       precoM2: cat.precoM2,
       valorUnit: cat.precoUnitario,
@@ -79,6 +81,7 @@ export default function ItensEditor({
   const selectCatalogoAposCriar = (idx: number, cat: Item) => {
     update(idx, {
       itemId: cat.id,
+      segmento: cat.segmento ?? null,
       descricao: cat.descricao ? `${cat.nome} - ${cat.descricao}` : cat.nome,
       precoM2: cat.precoM2,
       valorUnit: cat.precoUnitario,
@@ -145,6 +148,13 @@ export default function ItensEditor({
               onChange={(e) => update(idx, { descricao: e.target.value }, true)}
             />
 
+            <label className="block max-w-xs text-xs text-slate-600">
+              Categoria para a meta
+              <select className={inputClass} value={item.segmento ?? ''} onChange={(e) => update(idx, { segmento: segmentoValido(e.target.value) }, true)}>
+                <option value="">Sem classificação</option>
+                {SEGMENTOS.map(([valor,nome]) => <option value={valor} key={valor}>{nome}</option>)}
+              </select>
+            </label>
             {/* Linha 2: campos numéricos */}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
               <label>

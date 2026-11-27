@@ -1,3 +1,4 @@
+import { SEGMENTOS, segmentoValido, type Segmento } from '../lib/segmentos'
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { FormaPagamento, Item, VendaRapidaItem } from '../types'
@@ -51,6 +52,7 @@ export default function Pdv() {
   const [observacao, setObservacao] = useState('')
   const [descricaoAvulsa, setDescricaoAvulsa] = useState('')
   const [valorAvulso, setValorAvulso] = useState(0)
+  const [segmentoAvulso, setSegmentoAvulso] = useState<Segmento | null>(null)
   const [salvando, setSalvando] = useState(false)
   const [buscaVendas, setBuscaVendas] = useState('')
   const [paginaVendas, setPaginaVendas] = useState(1)
@@ -121,6 +123,7 @@ export default function Pdv() {
         {
           id: crypto.randomUUID(),
           itemId: item.id,
+          segmento: item.segmento ?? null,
           descricao: item.nome,
           qtd: 1,
           valorUnit,
@@ -141,6 +144,7 @@ export default function Pdv() {
       {
         id: crypto.randomUUID(),
         itemId: null,
+        segmento: segmentoAvulso,
         descricao,
         qtd: 1,
         valorUnit: valorAvulso,
@@ -149,6 +153,7 @@ export default function Pdv() {
     ])
     setDescricaoAvulsa('')
     setValorAvulso(0)
+    setSegmentoAvulso(null)
   }
 
   const atualizarLinha = (id: string, patch: Partial<VendaRapidaItem>) => {
@@ -329,6 +334,10 @@ export default function Pdv() {
                 </Field>
                 <Field label="Valor">
                   <MoneyInput valueCents={valorAvulso} onChangeCents={setValorAvulso} />
+                  <select aria-label="Categoria do item avulso" className={inputClass} value={segmentoAvulso ?? ''} onChange={e => setSegmentoAvulso(segmentoValido(e.target.value))}>
+                    <option value="">Sem classificação</option>
+                    {SEGMENTOS.map(([v,n]) => <option key={v} value={v}>{n}</option>)}
+                  </select>
                 </Field>
                 <Button type="button" variant="secondary" onClick={adicionarAvulso}>
                   Adicionar

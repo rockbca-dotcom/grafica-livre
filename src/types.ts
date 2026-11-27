@@ -3,6 +3,8 @@
 export type OrcamentoStatus = 'pendente' | 'aprovado' | 'faturado' | 'recusado'
 export type FaturaStatus = 'pendente' | 'parcial' | 'paga' | 'cancelada'
 export type ContaPagarStatus = 'pendente' | 'paga'
+import type { Segmento } from './lib/segmentos'
+
 export type Categoria = 'produto' | 'servico'
 
 export interface Cliente {
@@ -36,6 +38,8 @@ export interface Item {
   id: string
   nome: string
   categoria: Categoria
+  segmento?: Segmento | null
+  custoCentavosLocal?: number // somente modo local; nunca serializado para o catálogo público
   precoM2: number // centavos
   precoUnitario: number // centavos
   descricao: string
@@ -43,6 +47,7 @@ export interface Item {
 }
 
 export interface DocumentoItem {
+  segmento?: Segmento | null
   itemId: string | null
   descricao: string
   qtd: number
@@ -113,6 +118,7 @@ export interface Pagamento {
 
 /** Linha de uma venda recebida diretamente no PDV. Não gera fatura nem produção. */
 export interface VendaRapidaItem {
+  segmento?: Segmento | null
   id: string
   itemId: string | null
   descricao: string
