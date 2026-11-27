@@ -46,7 +46,12 @@ export async function salvarProjeto(p: Projeto): Promise<Projeto> {
   }
   const { data, error } = await supabase.rpc('salvar_projeto_amei', { p_id: p.id, p_versao: p.versao, p_dados: dados })
   if (error) throw error
-  return data as unknown as Projeto
+  // O PostgREST pode representar um retorno composto como uma lista de uma linha.
+  const row = (Array.isArray(data) ? (data.length === 1 ? data[0] : null) : data) as Projeto | null
+  if (!row || row.id !== p.id || !Number.isInteger(row.versao)) {
+    throw new Error('Não foi possível confirmar o salvamento. Reabra a lista antes de tentar novamente.')
+  }
+  return row
 }
 
 export async function faturarProjeto(p: Projeto, vencimento: string, forma: FormaPagamento) {
