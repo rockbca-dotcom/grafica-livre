@@ -12,6 +12,7 @@ import type {
 } from '../types'
 import { EMPRESA_PADRAO } from '../types'
 import { supabase } from './supabaseClient'
+import { segmentoValido } from '../lib/segmentos'
 
 export type CollectionName =
   | 'clientes'
@@ -161,6 +162,7 @@ function toRow(collection: CollectionName, r: CollectionRow): Record<string, unk
         id: i.id, nome: i.nome, categoria: i.categoria,
         preco_m2: i.precoM2, preco_unitario: i.precoUnitario, descricao: i.descricao,
         favorito: i.favorito ?? false,
+        ...(i.segmento !== undefined ? { segmento: segmentoValido(i.segmento) } : {}),
       }
     }
     case 'orcamentos': {
@@ -241,6 +243,7 @@ function fromRow(collection: CollectionName, r: Record<string, unknown>): Collec
         id: s('id'), nome: s('nome'), categoria: s('categoria') as Item['categoria'],
         precoM2: n('preco_m2'), precoUnitario: n('preco_unitario'), descricao: s('descricao'),
         favorito: r.favorito === true,
+        segmento: segmentoValido(r.segmento),
       } as Item
     case 'orcamentos':
       return {

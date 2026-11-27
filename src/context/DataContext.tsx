@@ -50,7 +50,7 @@ interface DataContextValue {
   deleteCliente: (id: string) => Promise<void>
   clienteById: (id: string) => Cliente | undefined
   // Itens
-  saveItem: (i: Item) => Promise<void>
+  saveItem: (i: Item, custo?: number) => Promise<void>
   deleteItem: (id: string) => Promise<void>
   // Orçamentos
   saveOrcamento: (o: Orcamento) => Promise<void>
@@ -203,11 +203,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ),
       clienteById: (id) => db.clientes.find((c) => c.id === id),
 
-      saveItem: (i) =>
-        run(
-          () => a().upsert('itens', i),
-          (prev) => ({ ...prev, itens: upsertIn(prev.itens, i) }),
-        ),
+      saveItem: (i, custo) => {
+        const item = !cloudMode && custo !== undefined ? { ...i, custoCentavosLocal: custo } : i
+        return run(async () => {
+          if (!cloudMode || custo === undefined) { await a().upsert('itens', item); return }
+          if (!supabase) throw new Error('Conexão com o banco indisponível.')
+          const { error } = await supabase.rpc('salvar_item_com_custo', {
+            p_id: i.id, p_nome: i.nome, p_tipo: i.categoria, p_preco_m2: i.precoM2,
+            p_preco_unitario: i.precoUnitario, p_descricao: i.descricao, p_favorito: i.favorito,
+            p_segmento: i.segmento ?? null, p_custo: custo,
+          })
+          if (error) throw error
+        }, (prev) => ({ ...prev, itens: upsertIn(prev.itens, item) }))
+      },
       deleteItem: (id) =>
         run(
           () => a().remove('itens', id),

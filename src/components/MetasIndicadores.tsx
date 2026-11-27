@@ -3,16 +3,11 @@ import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
 import { supabase } from '../data/supabaseClient'
 import {
-  calcularProgressoMetas, faturamentoMesCentavos, lerMetasLocais, mesAtualMetas,
+  calcularProgressoMetas, faturamentoMesSegmentado, lerMetasLocais, mesAtualMetas, progressoVazio,
   type ProgressoMetas,
 } from '../lib/metas'
 import { Card } from './ui'
-
-const VAZIO: ProgressoMetas = {
-  configurada: false,
-  pontoEquilibrioPct: null,
-  metaFaturamentoPct: null,
-}
+import MetasFaturamento from './MetasFaturamento'
 
 function CircularGauge({ valor }: { valor: number }) {
   const raio = 49
@@ -38,7 +33,7 @@ function CircularGauge({ valor }: { valor: number }) {
 export default function MetasIndicadores() {
   const { cloudMode, session } = useAuth()
   const { db } = useData()
-  const [progresso, setProgresso] = useState<ProgressoMetas>(VAZIO)
+  const [progresso, setProgresso] = useState<ProgressoMetas>(progressoVazio)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(false)
   const mes = mesAtualMetas()
@@ -50,7 +45,7 @@ export default function MetasIndicadores() {
 
     if (!cloudMode) {
       const dados = calcularProgressoMetas(
-        lerMetasLocais(mes), faturamentoMesCentavos(db, mes),
+        lerMetasLocais(mes), faturamentoMesSegmentado(db, mes),
       )
       setProgresso(dados)
       setCarregando(false)
@@ -64,21 +59,29 @@ export default function MetasIndicadores() {
     }
 
     void (async () => {
-      const { data, error } = await supabase.rpc('progresso_metas_mensais')
+      const { data, error } = await supabase.rpc('progresso_metas_segmentadas')
       if (!ativo) return
       if (error) {
         setErro(true)
-        setProgresso(VAZIO)
+        setProgresso(progressoVazio)
       } else {
         const linha = (Array.isArray(data) ? data[0] : data) as {
           configurada?: boolean
           ponto_equilibrio_pct?: number
-          meta_faturamento_pct?: number
+          meta_total_pct?: number | null
+          meta_grafica_pct?: number | null
+          meta_comunicacao_visual_pct?: number | null
+          tem_sem_classificacao?: boolean
+          modo_legado?: boolean
         } | null
         setProgresso({
           configurada: Boolean(linha?.configurada),
           pontoEquilibrioPct: linha?.configurada ? Number(linha.ponto_equilibrio_pct) : null,
-          metaFaturamentoPct: linha?.configurada ? Number(linha.meta_faturamento_pct) : null,
+          metaFaturamentoPct: linha?.meta_total_pct != null ? Number(linha.meta_total_pct) : null,
+          metaGraficaPct: linha?.meta_grafica_pct != null ? Number(linha.meta_grafica_pct) : null,
+          metaComunicacaoVisualPct: linha?.meta_comunicacao_visual_pct != null ? Number(linha.meta_comunicacao_visual_pct) : null,
+          temSemClassificacao: Boolean(linha?.tem_sem_classificacao),
+          modoLegado: Boolean(linha?.modo_legado),
         })
       }
       setCarregando(false)
@@ -110,29 +113,13 @@ export default function MetasIndicadores() {
         </p>
       </Card>
 
-      <Card className="h-full">
-        <h3 className="text-sm font-semibold text-slate-700">Meta de faturamento</h3>
-        <p className="mb-3 text-xs text-slate-500">Progresso do faturamento do mês atual</p>
-        <div className="flex h-36 flex-col justify-center gap-3">
-          {progresso.configurada && !carregando && !erro && progresso.metaFaturamentoPct != null ? (
-            <>
-              <div className="text-center text-3xl font-bold text-violet-700">
-                {progresso.metaFaturamentoPct.toLocaleString('pt-BR')}%
-              </div>
-              <div className="h-5 overflow-hidden rounded-full bg-violet-100"
-                role="progressbar" aria-label="Meta de faturamento"
-                aria-valuemin={0} aria-valuemax={100}
-                aria-valuenow={progresso.metaFaturamentoPct}>
-                <div className="h-full rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 transition-all"
-                  style={{ width: `${progresso.metaFaturamentoPct}%` }} />
-              </div>
-            </>
-          ) : (
-            <p className="text-center text-sm text-slate-500">{textoEstado}</p>
-          )}
-        </div>
-        <p className="mt-3 text-center text-xs text-slate-500">Meta do mês atual · 0 a 100%</p>
-      </Card>
+      <MetasFaturamento progresso={{
+          grafica: progresso.metaGraficaPct,
+          comunicacaoVisual: progresso.metaComunicacaoVisualPct,
+          total: progresso.metaFaturamentoPct,
+        }}
+        carregando={carregando} erro={erro}
+        modoLegado={progresso.modoLegado} temSemClassificacao={progresso.temSemClassificacao} />
     </div>
   )
 }
