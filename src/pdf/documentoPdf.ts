@@ -50,6 +50,9 @@ const AZUL = '#3B90EC' // azul de destaque (título, cabeçalho da tabela, total
 const CINZA = '#595959' // cinza (mais escuro) dos textos secundários (CNPJ, datas, rótulos)
 const PRETO = '#000000' // texto principal
 
+const AMEI = { preto: '#151515', amarelo: '#FFCF00', neutro: '#F5F5F5', linha: '#DEDCD5' }
+
+
 const FORMA_LABELS: Record<string, string> = {
   dinheiro: 'Dinheiro',
   pix: 'PIX',
@@ -120,7 +123,7 @@ function blocoCliente(cliente: Cliente | undefined): Content {
   }
 }
 
-function tabelaItens(doc: Orcamento | Fatura): Content {
+function tabelaItens(doc: Orcamento | Fatura, temaAmei = false): Content {
   const temMedidas = doc.itens.some((i) => i.m2 > 0)
   const header: TableCell[] = temMedidas
     ? ['Descrição', 'Qtd', 'Larg. (m)', 'Alt. (m)', 'm²', 'V. unit.', 'Total']
@@ -128,7 +131,7 @@ function tabelaItens(doc: Orcamento | Fatura): Content {
 
   const body: TableCell[][] = [
     header.map((h) => ({
-      text: String(h), bold: true, fontSize: 9, color: 'white', fillColor: AZUL,
+      text: String(h), bold: true, fontSize: 9, color: temaAmei ? AMEI.amarelo : 'white', fillColor: temaAmei ? AMEI.preto : AZUL,
     })),
     ...doc.itens.map((i): TableCell[] => {
       const base: TableCell[] = [
@@ -159,10 +162,11 @@ function tabelaItens(doc: Orcamento | Fatura): Content {
       body,
     },
     layout: {
-      hLineColor: () => '#e2e8f0',
-      vLineColor: () => '#e2e8f0',
+      hLineColor: () => temaAmei ? AMEI.linha : '#e2e8f0',
+      vLineColor: () => temaAmei ? AMEI.linha : '#e2e8f0',
       hLineWidth: () => 0.5,
-      vLineWidth: () => 0.5,
+      vLineWidth: () => temaAmei ? 0 : 0.5,
+      ...((temaAmei) ? { fillColor: (linha: number) => linha > 0 && linha % 2 === 0 ? AMEI.neutro : null } : {}),
       paddingTop: () => 5,
       paddingBottom: () => 5,
       paddingLeft: () => 6,
@@ -172,7 +176,7 @@ function tabelaItens(doc: Orcamento | Fatura): Content {
   }
 }
 
-function blocoTotais(doc: Orcamento | Fatura): Content {
+function blocoTotais(doc: Orcamento | Fatura, temaAmei = false): Content {
   const L = (label: string, valor: string): [string, string, boolean] => [label, valor, false]
   const impostos = doc.itens.reduce(
     (s, i) => s + Math.round((i.total * (i.impostoPct || 0)) / 100),
@@ -195,11 +199,13 @@ function blocoTotais(doc: Orcamento | Fatura): Content {
           body: linhas.map(([label, valor, destaque]) => [
             {
               text: label, bold: destaque, fontSize: destaque ? 12 : 10,
-              color: destaque ? AZUL : CINZA, border: [false, false, false, false],
+              color: destaque ? (temaAmei ? AMEI.preto : AZUL) : CINZA, border: [false, false, false, false],
+              ...(temaAmei && destaque ? { fillColor: AMEI.amarelo, margin: [4, 3, 0, 3] as [number,number,number,number] } : {}),
             },
             {
               text: valor, bold: destaque, fontSize: destaque ? 12 : 10,
               alignment: 'right', border: [false, false, false, false],
+              ...(temaAmei && destaque ? { fillColor: AMEI.amarelo, margin: [0, 3, 4, 3] as [number,number,number,number] } : {}),
             },
           ]),
         },
@@ -229,18 +235,89 @@ function blocoTexto(titulo: string, texto: string): Content[] {
   ]
 }
 
+function cabecalhoOrcamentoAmei(empresa: Empresa, numero: string): Content {
+  const dadosEndereco = empresa.endereco
+    ? [empresa.endereco, empresa.bairro, [empresa.cidade, empresa.estado].filter(Boolean).join('/'), empresa.cep].filter(Boolean).join(' • ')
+    : ''
+  return {
+    columns: [
+      {
+        width: '*',
+        stack: [
+          ...(empresa.logoDataUrl ? [{ image: empresa.logoDataUrl, fit: [96, 62] as [number, number], margin: [0, 0, 0, 6] as [number, number, number, number] }] : []),
+          { text: empresa.nome, bold: true, fontSize: 11 },
+          ...(empresa.cnpj ? [{ text: 'CNPJ: ' + empresa.cnpj }] : []),
+          ...(dadosEndereco ? [{ text: dadosEndereco }] : []),
+          { text: [empresa.telefone, empresa.email, empresa.website].filter(Boolean).join('  •  ') },
+        ],
+        color: AMEI.preto, fontSize: 9,
+      },
+      {
+        width: 'auto',
+        stack: [
+          { text: 'ORÇAMENTO', bold: true, fontSize: 23, color: AMEI.preto, alignment: 'right', margin: [0, 0, 0, 5] },
+          { table: { widths: ['*'], body: [[{ text: numero || '—', bold: true, alignment: 'right', color: AMEI.preto, fillColor: AMEI.amarelo, margin: [8, 4, 8, 4] }]] }, layout: 'noBorders' },
+        ],
+      },
+    ],
+    columnGap: 18,
+    margin: [0, 0, 0, 15],
+  }
+}
+
+function faixaOrcamentoAmei(titulo: string): Content {
+  return {
+    table: { widths: [5, '*'], body: [[
+      { text: '', fillColor: AMEI.amarelo },
+      { text: titulo, bold: true, color: '#FFFFFF', fillColor: AMEI.preto, fontSize: 9, margin: [4, 3, 0, 3] },
+    ]] },
+    layout: 'noBorders',
+    margin: [0, 0, 0, 7],
+  }
+}
+
+function rodapeOrcamentoAmei(empresa: Empresa, pagina: number, paginas: number): Content {
+  const contato = [empresa.telefone, empresa.website || empresa.email].filter(Boolean).join('  •  ') || empresa.nome
+  return {
+    stack: [
+      {
+        canvas: [
+          { type: 'rect', x: 0, y: 0, w: 523, h: 26, color: AMEI.preto },
+          { type: 'polyline', points: [{ x: 0, y: 0 }, { x: 32, y: 0 }, { x: 13, y: 26 }, { x: 0, y: 26 }], closePath: true, color: AMEI.amarelo },
+          { type: 'polyline', points: [{ x: 509, y: 0 }, { x: 523, y: 0 }, { x: 523, y: 26 }, { x: 490, y: 26 }], closePath: true, color: AMEI.amarelo },
+        ],
+      },
+      {
+        columns: [
+          { text: contato, fontSize: 8.5, bold: true, color: '#FFFFFF' },
+          { text: String(pagina) + ' / ' + String(paginas), width: 48, alignment: 'right', fontSize: 8, color: AMEI.amarelo },
+        ],
+        margin: [39, -18, 41, 0],
+      },
+    ],
+    margin: [36, 9, 36, 0],
+  }
+}
+
 function orcamentoDocDef(
   orcamento: Orcamento,
   cliente: Cliente | undefined,
   empresa: Empresa,
 ): TDocumentDefinitions {
   const validade = addDays(orcamento.data, orcamento.validadeDias)
-  const docDef: TDocumentDefinitions = {
+  return {
+    info: { title: 'Orçamento ' + orcamento.numero },
     pageSize: 'A4',
-    pageMargins: [40, 40, 40, 50],
-    defaultStyle: { color: PRETO },
+    pageMargins: [36, 36, 36, 64],
+    defaultStyle: { color: AMEI.preto, fontSize: 10 },
+    footer: (pagina, paginas) => rodapeOrcamentoAmei(empresa, pagina, paginas),
     content: [
-      cabecalho(empresa, 'ORÇAMENTO', orcamento.numero),
+      { canvas: [
+        { type: 'rect', x: 0, y: 0, w: 523, h: 3, color: AMEI.amarelo },
+        { type: 'rect', x: 0, y: 0, w: 76, h: 3, color: AMEI.preto },
+      ], margin: [0, 0, 0, 13] },
+      cabecalhoOrcamentoAmei(empresa, orcamento.numero),
+      faixaOrcamentoAmei('DADOS DO CLIENTE'),
       blocoCliente(cliente),
       {
         columns: [
@@ -250,16 +327,15 @@ function orcamentoDocDef(
             ? [{ text: [{ text: 'Prazo de entrega: ', bold: true }, orcamento.prazoEntrega], fontSize: 9 } as Content]
             : []),
         ],
-        margin: [0, 0, 0, 10] as [number, number, number, number],
+        margin: [0, 0, 0, 11],
       },
-      tabelaItens(orcamento),
-      blocoTotais(orcamento),
+      tabelaItens(orcamento, true),
+      blocoTotais(orcamento, true),
       ...blocoTexto('Observações', orcamento.observacoes),
       ...blocoTexto('Condições de Pagamento', orcamento.condicoesPagamento),
-      rodape(`${empresa.nome} — orçamento gerado em ${formatDateBR(orcamento.data)}. Valores sujeitos a alteração após o vencimento.`),
+      rodape(empresa.nome + ' — orçamento gerado em ' + formatDateBR(orcamento.data) + '. Valores sujeitos a alteração após o vencimento.'),
     ],
   }
-  return docDef
 }
 
 export function gerarOrcamentoPdf(
